@@ -4,6 +4,7 @@ class tableList{
 	private:
 		vector<table*> tables;
 		table errorTable = table("error");	//Used to return errors for functions that return tables
+		int getTablePosition(string name);
 
 	public:
 		tableList(){};
@@ -19,6 +20,14 @@ table tableList::getTable(string name){
 			return *tables[i];
 	}
 	return errorTable;
+}
+
+int tableList::getTablePosition(string name){
+	for(int i = 0; i < tables.size(); i++){
+		if(name == tables[i]->name)
+			return i;
+	}
+	return -1;
 }
 
 table tableList::getTable(int pos){
