@@ -28,3 +28,7 @@ bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> 
 
 	return true;
 }
+
+bool apiRemoveTable(string table){
+    return removeTable(table);
+}
