@@ -51,4 +51,5 @@ int tmpPos = getTablePosition(tableName)
         tables.erase(tmpPos);
         return true;
     }
+return false;
 }
