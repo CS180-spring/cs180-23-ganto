@@ -12,6 +12,7 @@ class tableList{
 		table getTable(string name);
 		table getTable(int pos);
 		vector<table*> getAllTables();
+		bool removeTable(string tableName);
 };
 
 table tableList::getTable(string name){
@@ -38,4 +39,16 @@ table tableList::getTable(int pos){
 
 vector<table*> tableList::getAllTables(){
 	return tables;
+}
+
+bool tableList::removeTable(string tableName){
+int tmpPos = getTablePosition(tableName)
+    if(-1 != tmpPos){
+        for(int i = 0; i < tables[tmpPos].size(); ++i){
+            delete tables[tmpPos][i];
+        }
+        delete tables[tmpPos];// if this does not work use delete[]
+        tables.erase(tmpPos);
+        return true;
+    }
 }
