@@ -82,3 +82,50 @@ bool apiAddColumn(string tableName, vector<string> columnNames){
 	}
 	return true;
 }
+
+bool apiRemoveColumn(string tableName, vector<string> columnNames){
+	table tempTable = tables.getTable(tableName);
+	if (tempTable.name == "error") {
+	    return false;
+	}
+	int index = -1;
+	for(int i=0; i<columnNames.size(); i++){
+		if(get<0>(tempTable.columns[i]) == columnNames[i]){
+			tempTable.columns.erase(i);
+			return true;
+		}
+	}
+	if(index == -1){
+		return false;
+	}
+	// I think I'm supposed to erase it from other vectors as well but I'm not sure which ones
+	return false;
+}
+
+bool apiRenameColumn(string tableName, string columnName, string newName){
+	table tempTable = tables.getTable(tableName);
+	if (tempTable.name == "error") {
+	    return false;
+	}
+	for(int i=0; i<tempTable.columns.size(); i++){
+		if(get<0>(tempTable.columns[i]) == columnName){
+			get<0>(tempTable.columns[i]) = newName;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool apiSetRequired(string tableName, string columnName, bool required){
+	table tempTable = tables.getTable(tableName);
+	if (tempTable.name == "error") {
+	    return false;
+	}
+	for(int i=0; i<tempTable.columns.size(); i++){
+		if(get<0>(tempTable.columns[i]) == columnName){
+			tempTable.required[i] = required;
+			return true;
+		}
+	}
+	return false;
+}
