@@ -16,7 +16,7 @@ class table{
 
 		vector<tuple<int, int>> indexes;	//stores position of entries sorted for a column tuple<column, position>
 
-		vector<vector<variant<string, double>*>> entries;	//Stores actual data, pointer allows non-contiguous data storage
+		vector<vector<variant<string, double>>*> entries;	//Stores actual data, pointer allows non-contiguous data storage
 
 		table(string name){this->name = name;};
 };
