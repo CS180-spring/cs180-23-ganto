@@ -69,4 +69,16 @@ vector<vector<int>> apiReadTable(string table, vector<string> columns){
 	return result;
 }
 
-//testing git branch
+bool apiAddColumn(string tableName, vector<string> columnNames){
+	table tempTable = tables.getTable(tableName);
+	if (tempTable.name == "error") {
+	    return false;
+	}
+	for(int i=0; i<columnNames.size(); i++){
+		tuple<string, int> data;
+		get<0>(data) = columnNames[i];
+		//get<1>(data) = 0.0;
+		tempTable.columns.push_back(data);
+	}
+	return true;
+}
