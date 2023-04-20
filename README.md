@@ -9,6 +9,7 @@ The aim of GantoDB is to create a document data store backend which is capable o
 - Francis Cuarteros (data structure engineer)
 - Milind Devnani (algorithm and performance specialist)
 - Nael Bahi (user/programming interface engineer)
+- Ronny Gorani (testing lead)
 
 ## Techologies
 - **Interface**: library/programming APIs; terminal/shell console; GUI
