@@ -29,13 +29,13 @@ bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> 
 	return true;
 }
 
-bool apiRemoveTable(string table){
-    return removeTable(table);
-}
+//bool apiRemoveTable(string table){
+//	return removeTable(table);
+//}
 
-vector<vector<int>> apiReadTable(string table, vector<string> columns){
+vector<vector<int>> apiReadTable(string tableName, vector<string> columns){
 	// Get the table object
-	table t = tables.getTable(table);
+	table t = tables.getTable(tableName);
 
 	// Check if the table exists
 	if (t.name == "error") {
