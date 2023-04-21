@@ -1,6 +1,10 @@
 #include "tableList.cpp"
 tableList tables = tableList();
 
+bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos, vector<int> requiredPos);
+
+
+
 bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos){
 	vector<int> tmp;
 	return addTable(tableName, columns, keyPos, tmp);
@@ -33,40 +37,27 @@ bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> 
 //	return removeTable(table);
 //}
 
-vector<vector<int>> apiReadTable(string tableName, vector<string> columns){
+tuple<vector<string>, vector<vector<int>>> apiReadTable(string tableName, vector<string> columns){
 	// Get the table object
 	table t = tables.getTable(tableName);
 
 	// Check if the table exists
-	if (t.name == "error") {
+	if (t.name == "errorTable") {
 	    return {};  // Return an empty vector if the table does not exist
 	}
-
-	// Create a vector of column positions to retrieve
-	vector<int> columnPositions;
-    	for (string col : columns) {
-    	    for (int i = 0; i < t.columns.size(); i++) {
-	        if (col == get<0>(t.columns[i])) {
-	            columnPositions.push_back(i);
-	            break;
-	        }
-	    }
+	vector<int> tmpInt;
+	vector<string> tmpString;
+	tmpString.push_back(t.name);
+	for(int i = 0; i < t.columns.size(); i++){
+		tmpString.push_back(get<0>(t.columns[i]));
+		tmpInt.push_back(get<1>(t.columns[i]));
 	}
+	vector<vector<int>> comboInt;
+	comboInt.push_back(tmpInt);
+	comboInt.push_back(t.keys);
+	comboInt.push_back(t.required);
 
-	// Read the specified columns from the table and store the values in a vector of vectors
-	vector<vector<int>> result;
-	for (vector<variant<string, double>>* entry : t.entries) {
-	    vector<int> row;
-	    for (int pos : columnPositions) {
-	       // Check if the value is an integer and add it to the row vector
-	       if (holds_alternative<int>(entry->at(pos))) {
-    	           row.push_back(get<int>(entry->at(pos)));
-     	       }
-    	    }
-	    result.push_back(row);
-	}
-
-	return result;
+	return {tmpString, comboInt};
 }
 
 bool apiAddColumn(string tableName, vector<string> columnNames){
@@ -91,7 +82,7 @@ bool apiRemoveColumn(string tableName, vector<string> columnNames){
 	int index = -1;
 	for(int i=0; i<columnNames.size(); i++){
 		if(get<0>(tempTable.columns[i]) == columnNames[i]){
-			tempTable.columns.erase(i);
+			tempTable.columns.erase(tempTable.columns.begin() + i);
 			return true;
 		}
 	}
