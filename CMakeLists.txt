@@ -1,48 +1,55 @@
-cmake_minimum_required(VERSION 3.15)
-project(test)
+cmake_minimum_required(VERSION 3.20)
 
-set(CMAKE_CXX_STANDARD 20)
+########################################
+# Project setup
+########################################
+set(PROJECT_NAME project1)
+project(${PROJECT_NAME})
+# After project(..) is called, the following variables are available:
+# * PROJECT_SOURCE_DIR - Top level source directory for the project
+# * PROJECT_BINARY_DIR - Full path to build directory for project
 
-set(CMAKE_CXX_FLAGS --coverage)
+########################################
+# Set up the compiler flags
+########################################
+set(CMAKE_CXX_FLAGS "-g -Wall")
+set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+########################################
+# Testing
+########################################
+# Options. Turn on with 'cmake -Dmyvarname=ON'.
+# option(BUILD_TESTS "Build all tests." ON) # Makes boolean 'test' available.
 
-# Reference: https://github.com/google/googletest/tree/main/googletest#incorporating-into-an-existing-cmake-project
-# Download and unpack googletest at configure time
-configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
-if (result)
-    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
-endif ()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
-if (result)
-    message(FATAL_ERROR "Build step for googletest failed: ${result}")
-endif ()
+# google test is a git submodule for the project, and it is also cmake-based
+add_subdirectory(./googletest)
 
-# Prevent overriding the parent project's compiler/linker
-# settings on Windows
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+enable_testing()
+# 
+# Include the gtest library. gtest_SOURCE_DIR is available due to
+# 'project(gtest)' above.
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+ 
+########################################
+# Test files
+########################################
+file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/tests/*.cpp)
 
-# Add googletest directly to our build. This defines
-# the gtest and gtest_main targets.
-add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
-        ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-        EXCLUDE_FROM_ALL)
+########################################
+# Unit Tests
+########################################
+add_executable(runUnitTests ${TEST_SRC_FILES})
 
-# The gtest/gtest_main targets carry header search path
-# dependencies automatically when using CMake 2.8.11 or
-# later. Otherwise we have to add them here ourselves.
-if (CMAKE_VERSION VERSION_LESS 2.8.11)
-    include_directories("${gtest_SOURCE_DIR}/include")
-endif ()
+########################################
+# Standard linking to gtest stuff.
+########################################
+target_link_libraries(runUnitTests gtest gtest_main)
 
-set(SOURCE_FILES gantoApi.cpp table.cpp tableList.cpp)
+########################################
+# Extra linking for the project.
+########################################
+target_link_libraries(runUnitTests project1_lib)
 
-set(TEST_FILES test.cpp)
-add_executable(test ${TEST_FILES} ${SOURCE_FILES})
-
-target_link_libraries(test gtest gtest_main)
+# This is so you can do 'make test' to see all your tests run, instead of
+# manually running the executable runUnitTests to see those specific tests.
+add_test(UnitTests runUnitTests)
