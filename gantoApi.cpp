@@ -1,8 +1,12 @@
 #include "tableList.cpp"
-tableList tables = tableList();
+class api{
+	private:
+	tableList tables;
 
-bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos, vector<int> requiredPos);
-
+	public:
+api(){
+	tables = tableList();
+}
 
 
 bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos){
@@ -12,10 +16,11 @@ bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> 
 
 bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos, vector<int> requiredPos){
 	table tmp = tables.getTable(tableName);
-	if("errorTable" != tmp.name);	//Name already in use
+	if("error" != tmp.name)	//Name already in use
 		return false;
-	table newTable = table(tableName);
-	newTable.columns = columns;		//Checking for column name re-use here would be expensive O(n!)
+		
+	table *newTable = new table(tableName);
+	newTable->columns = columns;		//Checking for column name re-use here would be expensive O(n!)
 
 	if(0 == keyPos.size())
 		return false;		//At least one key is mandatory
@@ -23,26 +28,26 @@ bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> 
 		if(0 > keyPos[i] || columns.size() <= keyPos[i])		//Check key column(s) point to actual columns
 			return false;
 	}
-	newTable.keys = keyPos;
-
+	newTable->keys = keyPos;
 	for(int i = 0; i < requiredPos.size(); i++){
 		if(0 > requiredPos[i] || columns.size() <= requiredPos[i])		//Check required column(s) point to actual columns
 			return false;
 	}
 
+	tables.addTable(newTable);
+
 	return true;
 }
 
-//bool apiRemoveTable(string table){
-//	return removeTable(table);
-//}
+bool apiRemoveTable(string table){
+	return tables.removeTable(table);
+}
 
 tuple<vector<string>, vector<vector<int>>> apiReadTable(string tableName, vector<string> columns){
 	// Get the table object
 	table t = tables.getTable(tableName);
-
 	// Check if the table exists
-	if (t.name == "errorTable") {
+	if (t.name == "error") {
 	    return {};  // Return an empty vector if the table does not exist
 	}
 	vector<int> tmpInt;
@@ -60,29 +65,27 @@ tuple<vector<string>, vector<vector<int>>> apiReadTable(string tableName, vector
 	return {tmpString, comboInt};
 }
 
-bool apiAddColumn(string tableName, vector<string> columnNames){
-	table tempTable = tables.getTable(tableName);
-	if (tempTable.name == "error") {
+bool apiAddColumn(string tableName, vector<tuple<string, int>> columnNames){
+	table* tempTable = tables.getTablePointer(tableName);
+	if (tempTable->name == "error") {
 	    return false;
 	}
 	for(int i=0; i<columnNames.size(); i++){
-		tuple<string, int> data;
-		get<0>(data) = columnNames[i];
-		//get<1>(data) = 0.0;
-		tempTable.columns.push_back(data);
+		//Error handling needed here
+		tempTable->columns.push_back(columnNames[i]);
 	}
 	return true;
 }
 
 bool apiRemoveColumn(string tableName, vector<string> columnNames){
-	table tempTable = tables.getTable(tableName);
-	if (tempTable.name == "error") {
+	table* tempTable = tables.getTablePointer(tableName);
+	if (tempTable->name == "error") {
 	    return false;
 	}
 	int index = -1;
 	for(int i=0; i<columnNames.size(); i++){
-		if(get<0>(tempTable.columns[i]) == columnNames[i]){
-			tempTable.columns.erase(tempTable.columns.begin() + i);
+		if(get<0>(tempTable->columns[i]) == columnNames[i]){
+			tempTable->columns.erase(tempTable->columns.begin() + i);
 			return true;
 		}
 	}
@@ -94,13 +97,13 @@ bool apiRemoveColumn(string tableName, vector<string> columnNames){
 }
 
 bool apiRenameColumn(string tableName, string columnName, string newName){
-	table tempTable = tables.getTable(tableName);
-	if (tempTable.name == "error") {
+	table* tempTable = tables.getTablePointer(tableName);
+	if (tempTable->name == "error") {
 	    return false;
 	}
-	for(int i=0; i<tempTable.columns.size(); i++){
-		if(get<0>(tempTable.columns[i]) == columnName){
-			get<0>(tempTable.columns[i]) = newName;
+	for(int i=0; i<tempTable->columns.size(); i++){
+		if(get<0>(tempTable->columns[i]) == columnName){
+			get<0>(tempTable->columns[i]) = newName;
 			return true;
 		}
 	}
@@ -108,15 +111,16 @@ bool apiRenameColumn(string tableName, string columnName, string newName){
 }
 
 bool apiSetRequired(string tableName, string columnName, bool required){
-	table tempTable = tables.getTable(tableName);
-	if (tempTable.name == "error") {
+	table* tempTable = tables.getTablePointer(tableName);
+	if (tempTable->name == "error") {
 	    return false;
 	}
-	for(int i=0; i<tempTable.columns.size(); i++){
-		if(get<0>(tempTable.columns[i]) == columnName){
-			tempTable.required[i] = required;
+	for(int i=0; i<tempTable->columns.size(); i++){
+		if(get<0>(tempTable->columns[i]) == columnName){
+			tempTable->required[i] = required;
 			return true;
 		}
 	}
 	return false;
 }
+};

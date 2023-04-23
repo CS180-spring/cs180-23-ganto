@@ -13,7 +13,17 @@ class tableList{
 		table getTable(int pos);
 		vector<table*> getAllTables();
 		bool removeTable(string tableName);
+		table* getTablePointer(string name);
+		void addTable(table *newTable);
 };
+
+table* tableList::getTablePointer(string name){
+	return tables[getTablePosition(name)];
+}
+
+void tableList::addTable(table *newTable){
+	tables.push_back(newTable);
+}
 
 table tableList::getTable(string name){
 	return getTable(getTablePosition(name));

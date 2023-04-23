@@ -14,3 +14,7 @@ runUnitTests.vcxproj.filters
 ZERO_CHECK.vcxproj
 ZERO_CHECK.vcxproj.filters
 CTestTestfile.cmake
+CMakeCache.txt
+Testing/Temporary/CTestCostData.txt
+Testing/Temporary/LastTest.log
+Testing/Temporary/LastTestsFailed.log
