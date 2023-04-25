@@ -5,7 +5,7 @@ class tableList{
 		vector<table*> tables;
 		table errorTable = table("error");	//Used to return errors for functions that return tables
 		int getTablePosition(string name);
-
+		int getColumnPosition(int tablePos, string name);
 	public:
 		tableList(){};
 		
@@ -15,6 +15,7 @@ class tableList{
 		bool removeTable(string tableName);
 		table* getTablePointer(string name);
 		void addTable(table *newTable);
+		int getColumnType(string tableName, string columnName);
 };
 
 table* tableList::getTablePointer(string name){
@@ -58,4 +59,23 @@ bool tableList::removeTable(string tableName){
         return true;
     }
 	return false;
+}
+
+int tableList::getColumnPosition(int tablePos, string name){
+    for(int i = 0; i < tables[tablePos]->columns.size(); i++){
+        if(name == get<0>(tables[tablePos]->columns[i]))
+            return i;
+    }
+}
+
+int tableList::getColumnType(string tableName, string columnName){
+    int tablePos = getTablePosition(tableName);
+    if(-1 == tablePos)
+        return -1;
+
+    int columnPos = getColumnPosition(tablePos, columnName);
+    if(-1 == columnPos)
+        return -1;
+
+    return get<1>(tables[tablePos]->columns[columnPos]);
 }
