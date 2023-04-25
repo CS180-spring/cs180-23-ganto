@@ -123,4 +123,39 @@ bool apiSetRequired(string tableName, string columnName, bool required){
 	}
 	return false;
 }
+
+bool apiUpdateEntry(string table, string columns, double newData) {
+    table* t = tables.getTablePointer(table);
+
+    if (t->name == "error") {
+        return false;
+    }
+    
+    if(getColumnType(table, columns) == 1){
+        for (int i = 0; i < tables[tablePos]->columns[columnPos].size(); i++) {
+            columns[columnPos][i] = newData;
+        }
+        return true;
+    }    
+
+    return false;
+}
+
+bool apiUpdateEntry(string table, string columns, string newData) {
+    table* t = tables.getTablePointer(table);
+
+    if (t->name == "error") {
+        return false;
+    }
+    
+    if(getColumnType(table, columns) == 0){
+        for (int i = 0; i < tables[tablePos]->columns[columnPos].size(); i++) {
+            columns[columnPos][i] = newData;
+        }
+        return true;
+    }    
+
+    return false;
+}
+	
 };
