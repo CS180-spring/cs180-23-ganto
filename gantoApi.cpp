@@ -124,3 +124,94 @@ bool apiSetRequired(string tableName, string columnName, bool required){
 	return false;
 }
 };
+
+vector<vector<variant<string, double>>> apiReadEntry(string tableName, vector<string> displayColumns) {
+    table* t = tableList.getTablePointer(tableName);
+    vector<vector<variant<string, double>>> result;
+    if (t != nullptr) {
+        vector<int> columnPositions;
+        for (string col : displayColumns) {
+            for (int i = 0; i < t->columns.size(); i++) {
+                if (col == get<0>(t->columns[i])) {
+                    columnPositions.push_back(i);
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < t->entries.size(); i++) {
+            vector<variant<string, double>> entryResult;
+            for (int pos : columnPositions) {
+                entryResult.push_back(t->entries[i]->at(pos));
+            }
+            result.push_back(entryResult);
+        }
+    }
+    return result;
+}
+
+vector<vector<variant<string, double>>> api::apiReadEntry(string tableName, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions) {
+    table* t = tableList.getTablePointer(tableName);
+    vector<vector<variant<string, double>>> result;
+    if (t != nullptr) {
+        vector<int> columnPositions;
+        for (string col : displayColumns) {
+            for (int i = 0; i < t->columns.size(); i++) {
+                if (col == get<0>(t->columns[i])) {
+                    columnPositions.push_back(i);
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < t->entries.size(); i++) {
+            bool isEntryValid = true;
+            for (auto condition : conditions) {
+                int colPos = -1;
+                for (int i = 0; i < t->columns.size(); i++) {
+                    if (get<0>(t->columns[i]) == get<0>(condition)) {
+                        colPos = i;
+                        break;
+                    }
+                }
+                if (colPos == -1) {
+                    isEntryValid = false;
+                    break;
+                }
+                int op = get<1>(condition);
+                variant<string, double> val = get<2>(condition);
+                variant<string, double> entryVal = t->entries[i]->at(colPos);
+                bool isConditionMet = false;
+                switch (op) {
+                    case 0:
+                        isConditionMet = (entryVal == val);
+                        break;
+                    case 1:
+                        isConditionMet = (holds_alternative<double>(entryVal) && get<double>(entryVal) > get<double>(val));
+                        break;
+                    case 2:
+                        isConditionMet = (holds_alternative<double>(entryVal) && get<double>(entryVal) >= get<double>(val));
+                        break;
+                    case 3:
+                        isConditionMet = (holds_alternative<double>(entryVal) && get<double>(entryVal) < get<double>(val));
+                        break;
+                    case 4:
+                        isConditionMet = (holds_alternative<double>(entryVal) && get<double>(entryVal) <= get<double>(val));
+                        break;
+                    default:
+                        break;
+                }
+                if (!isConditionMet) {
+                    isEntryValid = false;
+                    break;
+                }
+            }
+            if (isEntryValid) {
+                vector<variant<string, double>> entryResult;
+                for (int pos : columnPositions) {
+                    entryResult.push_back(t->entries[i]->at(pos));
+                }
+                result.push_back(entryResult);
+            }
+        }
+    }
+    return result;
+
