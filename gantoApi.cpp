@@ -4,46 +4,106 @@ class api{
 	tableList tables;
 
 	public:
-api(){
-	tables = tableList();
-}
+	api(){ tables = tableList(); }
+
+	//Table Functions
+		//Add Table
+	bool apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int>keyPos);
+	bool apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int>keyPos, vector<int> requiredPos);
+	bool apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int> localKeys, vector<tuple<string, string>> foreignPos);
+	bool apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int> localKeys, vector<tuple<string, string>> foreignPos, vector<int> requiredPos);
+		//Remove Table
+	bool apiRemoveTable(string table);
+		//Read Table
+	tuple<vector<string>, vector<vector<int>>> apiReadTable(string tableName, vector<string> columns);
+		//Update Table
+	bool apiAddColumn(string tableName, vector<tuple<string, int>> columnNames);
+	bool apiRemoveColumn(string tableName, vector<string> columnNames);
+	bool apiRenameColumn(string tableName, string columnName, string newName);
+	bool apiSetRequired(string tableName, string columnName, bool required);
+
+	//Entry Functions
+		//Add Entry
+	bool apiAddEntry(string table, vector<variant<string, double>> columns);
+		//Remove Entry
+	bool apiRemoveEntry(string table, vector<tuple<string, int, variant<string, double>>> conditions);	//Delete all entries from table where conditions == true
+	bool apiRemoveEntry(string table, string column, vector<tuple<string, int, variant<string, double>>> conditions);	//Make columns nullptr for all entries where conditions == true
+		//Update Entry
+	bool apiUpdateEntry(string table, string column, double newData);		//Changes value of column to newData for all entries
+	bool apiUpdateEntry(string table, string column, string newData);
+	bool apiUpdateEntry(string table, string column, vector<tuple<string, int, variant<string, double>>> conditions, double newData);	//Changes value of column to newData for all entries where if(column[entry] operation compareWith)
+	bool apiUpdateEntry(string table, string column, vector<tuple<string, int, variant<string, double>>> conditions, string newData);
+		//Read Entry
+	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns);
+	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions);
+
+};
 
 
-bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos){
+
+bool api::apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos){
 	vector<int> tmp;
-	return addTable(tableName, columns, keyPos, tmp);
+	return apiAddTable(tableName, columns, keyPos, tmp);
 }
 
-bool addTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos, vector<int> requiredPos){
+bool api::apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos, vector<int> requiredPos){
+	if(0 == keyPos.size())
+		return false;		//At least one key is mandatory
+	return apiAddTable(tableName, columns, keyPos, {}, requiredPos);
+
+}
+
+bool api::apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int> localKeys, vector<tuple<string, string>> foreignPos){
+	return apiAddTable(tableName, columns, localKeys, foreignPos, {});
+}
+
+bool api::apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int> localKeys, vector<tuple<string, string>> foreignPos, vector<int> requiredPos){
 	table tmp = tables.getTable(tableName);
 	if("error" != tmp.name)	//Name already in use
 		return false;
-		
-	table *newTable = new table(tableName);
-	newTable->columns = columns;		//Checking for column name re-use here would be expensive O(n!)
 
-	if(0 == keyPos.size())
-		return false;		//At least one key is mandatory
-	for(int i = 0; i < keyPos.size(); i++){
-		if(0 > keyPos[i] || columns.size() <= keyPos[i])		//Check key column(s) point to actual columns
+	int end = tables.size();
+	/*
+	for(int i = 0; i < foreignPos.size(); i++){
+		if( get<0>(foreignPos[i]) || end < get<0>(foreignPos[i]))
+			return false;
+		if(0 < get<1>(foreignPos[i]) || get<1>(foreignPos[i]) > tables.getTable(get<0>(foreignPos[i])).columns.size())
 			return false;
 	}
-	newTable->keys = keyPos;
+	*/
+
+
+	for(int i = 0; i < localKeys.size(); i++){
+		if(0 > localKeys[i] || columns.size() <= localKeys[i])		//Check key column(s) point to actual columns
+			return false;
+	}
+
 	for(int i = 0; i < requiredPos.size(); i++){
 		if(0 > requiredPos[i] || columns.size() <= requiredPos[i])		//Check required column(s) point to actual columns
 			return false;
 	}
+	for(int i = 0; i < columns.size(); i++){						//Check for repeated column names O(n!) runtime
+		for(int j = 0; j < i; j++){
+			if(columns[i] == columns[j])
+				return false;
+		}
+	}
+
+	table *newTable = new table(tableName);
+	newTable->columns = columns;
+	//newTable->keys = localKeys;
 
 	tables.addTable(newTable);
+	tables.makeForeign(foreignPos, tableName);	//Marks columns as having dependants
 
 	return true;
 }
 
-bool apiRemoveTable(string table){
+bool api::apiRemoveTable(string table){
 	return tables.removeTable(table);
 }
 
-tuple<vector<string>, vector<vector<int>>> apiReadTable(string tableName, vector<string> columns){
+tuple<vector<string>, vector<vector<int>>> api::apiReadTable(string tableName, vector<string> columns){
 	// Get the table object
 	table t = tables.getTable(tableName);
 	// Check if the table exists
@@ -59,13 +119,13 @@ tuple<vector<string>, vector<vector<int>>> apiReadTable(string tableName, vector
 	}
 	vector<vector<int>> comboInt;
 	comboInt.push_back(tmpInt);
-	comboInt.push_back(t.keys);
-	comboInt.push_back(t.required);
+	//comboInt.push_back(t.keys);
+	//comboInt.push_back(t.required);
 
 	return {tmpString, comboInt};
 }
 
-bool apiAddColumn(string tableName, vector<tuple<string, int>> columnNames){
+bool api::apiAddColumn(string tableName, vector<tuple<string, int>> columnNames){
 	table* tempTable = tables.getTablePointer(tableName);
 	if (tempTable->name == "error") {
 	    return false;
@@ -77,7 +137,7 @@ bool apiAddColumn(string tableName, vector<tuple<string, int>> columnNames){
 	return true;
 }
 
-bool apiRemoveColumn(string tableName, vector<string> columnNames){
+bool api::apiRemoveColumn(string tableName, vector<string> columnNames){
 	table* tempTable = tables.getTablePointer(tableName);
 	if (tempTable->name == "error") {
 	    return false;
@@ -96,7 +156,7 @@ bool apiRemoveColumn(string tableName, vector<string> columnNames){
 	return false;
 }
 
-bool apiRenameColumn(string tableName, string columnName, string newName){
+bool api::apiRenameColumn(string tableName, string columnName, string newName){
 	table* tempTable = tables.getTablePointer(tableName);
 	if (tempTable->name == "error") {
 	    return false;
@@ -110,7 +170,7 @@ bool apiRenameColumn(string tableName, string columnName, string newName){
 	return false;
 }
 
-bool apiSetRequired(string tableName, string columnName, bool required){
+bool api::apiSetRequired(string tableName, string columnName, bool required){
 	table* tempTable = tables.getTablePointer(tableName);
 	if (tempTable->name == "error") {
 	    return false;
@@ -123,4 +183,3 @@ bool apiSetRequired(string tableName, string columnName, bool required){
 	}
 	return false;
 }
-};
