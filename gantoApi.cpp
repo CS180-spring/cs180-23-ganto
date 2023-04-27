@@ -128,7 +128,7 @@ bool apiSetRequired(string tableName, string columnName, bool required){
 vector<vector<variant<string, double>>> apiReadEntry(string tableName, vector<string> displayColumns) {
     table* t = tableList.getTablePointer(tableName);
     vector<vector<variant<string, double>>> result;
-    if (t != nullptr) {
+    if (t->name != "error") {
         vector<int> columnPositions;
         for (string col : displayColumns) {
             for (int i = 0; i < t->columns.size(); i++) {
@@ -149,10 +149,10 @@ vector<vector<variant<string, double>>> apiReadEntry(string tableName, vector<st
     return result;
 }
 
-vector<vector<variant<string, double>>> api::apiReadEntry(string tableName, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions) {
+vector<vector<variant<string, double>>> apiReadEntry(string tableName, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions) {
     table* t = tableList.getTablePointer(tableName);
     vector<vector<variant<string, double>>> result;
-    if (t != nullptr) {
+    if (t->name != "error") {
         vector<int> columnPositions;
         for (string col : displayColumns) {
             for (int i = 0; i < t->columns.size(); i++) {
