@@ -128,3 +128,22 @@ bool tableList::removeTable(string tableName){
     }
 	return false;
 }
+
+int tableList::getColumnPosition(int tablePos, string name){
+    for(int i = 0; i < tables[tablePos]->columns.size(); i++){
+        if(name == get<0>(tables[tablePos]->columns[i]))
+            return i;
+    }
+}
+
+int tableList::getColumnType(string tableName, string columnName){
+    int tablePos = getTablePosition(tableName);
+    if(-1 == tablePos)
+        return -1;
+
+    int columnPos = getColumnPosition(tablePos, columnName);
+    if(-1 == columnPos)
+        return -1;
+
+    return get<1>(tables[tablePos]->columns[columnPos]);
+}

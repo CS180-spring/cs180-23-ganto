@@ -183,3 +183,143 @@ bool api::apiSetRequired(string tableName, string columnName, bool required){
 	}
 	return false;
 }
+
+bool apiUpdateEntry(string table, string columns, double newData) {
+    table* t = tables.getTablePointer(table);
+
+    if (t->name == "error") {
+        return false;
+    }
+    
+    if(getColumnType(table, columns) == 1){
+        for (int i = 0; i < tables[tablePos]->columns[columnPos].size(); i++) {
+            columns[columnPos][i] = newData;
+        }
+        return true;
+    }    
+
+    return false;
+}
+
+bool apiUpdateEntry(string table, string columns, string newData) {
+    table* t = tables.getTablePointer(table);
+
+    if (t->name == "error") {
+        return false;
+    }
+    
+    if(getColumnType(table, columns) == 0){
+        for (int i = 0; i < tables[tablePos]->columns[columnPos].size(); i++) {
+            columns[columnPos][i] = newData;
+        }
+        return true;
+    }    
+
+    return false;
+}
+	
+bool apiUpdateEntry(string table, string column, int operation, double compareWith, double newData) {
+    table* t = tables.getTablePointer(table);
+
+    if (t->name == "error") {
+        return false;
+    }
+
+    int columnPos = -1;
+    for (int i = 0; i < t->columns.size(); i++) {
+        if (get<0>(t->columns[i]) == column) {
+            columnPos = i;
+            break;
+        }
+    }
+
+    if (columnPos == -1) {
+        return false;  
+    }
+
+    if(getColumnType(table, column) != 1){
+        return false;
+    }
+
+    for (int i = 0; i < t->columns.size(); i++) {
+        double currentValue = get<double>(t->columns[i][columnPos]);
+        bool cond = false;
+        switch (operation) {
+            case 0:  
+                cond = currentValue == compareWith;
+                break;
+            case 1:  
+                cond = currentValue > compareWith;
+                break;
+            case 2:  
+                cond = currentValue >= compareWith;
+                break;
+            case 3:  
+                cond = currentValue < compareWith;
+                break;
+            case 4:  
+                cond = currentValue <= compareWith;
+                break;
+            default:
+                return false;  
+        }
+        if (cond) {
+            t->columns[i][columnPos] = newData;
+        }
+    }
+    return true;
+}
+
+bool apiUpdateEntry(string table, string column, int operation, string compareWith, string newData) {
+    table* t = tables.getTablePointer(table);
+
+    if (t->name == "error") {
+        return false;
+    }
+
+    int columnPos = -1;
+    for (int i = 0; i < t->columns.size(); i++) {
+        if (get<0>(t->columns[i]) == column) {
+            columnPos = i;
+            break;
+        }
+    }
+
+    if (columnPos == -1) {
+        return false;  
+    }
+
+    if(getColumnType(table, column) != 0){
+        return false;
+    }
+
+    for (int i = 0; i < t->columns.size(); i++) {
+        double currentValue = get<double>(t->columns[i][columnPos]);
+        bool cond = false;
+        switch (operation) {
+            case 0:  
+                cond = currentValue == compareWith;
+                break;
+            case 1:  
+                cond = currentValue > compareWith;
+                break;
+            case 2:  
+                cond = currentValue >= compareWith;
+                break;
+            case 3:  
+                cond = currentValue < compareWith;
+                break;
+            case 4:  
+                cond = currentValue <= compareWith;
+                break;
+            default:
+                return false;  
+        }
+        if (cond) {
+            t->columns[i][columnPos] = newData;
+        }
+    }
+    return true;
+}
+	
+};
