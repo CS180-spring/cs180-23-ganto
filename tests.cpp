@@ -1,96 +1,29 @@
 #include "gantoApi.cpp"
-#include <iostream>
-api t = api();
+#include <gtest/gtest.h>
 
-void addTableTest(){
-	cout << "Add Table Tests" << endl;
-	vector<tuple<string, int>> columns = {{"name", 0}, {"age", 1}, {"location", 0}};
-	vector<int> keys = {0};
-	vector<int> requiredPos;
-	cout << "\tBasic Test: ";
-	if(true == t.addTable("test", columns, keys))
-		cout << "Success" << endl;
-	else
-		cout << "Failed" << endl;
+class GantoApiTest : public ::testing::Test {
+protected:
+    api testApi;
 
-	columns = {make_tuple("Name", 0), make_tuple("Age", 1)};
-	cout << "\tValidTable: ";
-	if(true == t.addTable("People", columns, keys))
-		cout << "Success" << endl;
-	else
-		cout << "Failed" << endl;
+    // Set up a test table to be used in the tests
+    virtual void SetUp() {
+        vector<tuple<string, int>> columns = {{"column1", 0}, {"column2", 1}};
+        vector<int> keys = {0};
+        vector<int> required = {1};
+        testApi.addTable("testTable", columns, keys, required);
+    }
+};
 
-	columns = {make_tuple("Name", 0), make_tuple("Age", 1)};
-	cout << "\tInvalidTable: ";
-	if(false == t.addTable("People", columns, keys))
-		cout << "Success" << endl;
-	else
-		cout << "Failed" << endl;
-	
-	
-	columns = {make_tuple("Name", 0), make_tuple("Age", 1)};
-	cout << "\tDuplicateTable: ";
-	if(false == t.addTable("People", columns, keys))
-		cout << "Success" << endl;
-	else
-		cout << "Failed" << endl;
-}
-
-void updateTableTest(){
-	cout << "Update Table Tests" << endl;
-	vector<tuple<string, int>> columns = {{"time", 1}, {"distance", 1}, {"personality", 0}};
-	vector<int> keys = {0};
-	vector<int> requiredPos;
-	cout << "\tAdd Column Test: ";
-	if(true == t.apiAddColumn("test", columns))
-		cout << "Success" << endl;
-	else
-		cout << "Failed" << endl;
-}
-
-void deleteTableTest(){
-	cout << "Delete Table Tests" << endl;
-	vector<tuple<string, int>> columns = {{"name", 0}, {"age", 1}, {"location", 0}};
-	vector<int> keys = {0};
-	vector<int> requiredPos;
-	cout << "\tBasic Test: ";
-	if(true == t.apiRemoveTable("test"))
-		cout << "Success" << endl;
-	else
-		cout << "Failed" << endl;
-}
-
-void readTableTest(){
-	cout << "Read Table Tests" << endl;
-
-	vector<tuple<string, int>> columns = {{"name", 0}, {"age", 1}, {"location", 0}};
-	vector<int> keys = {0};
-	vector<int> requiredPos;
-	t.addTable("test", columns, keys);
-
-	vector<string> columnChoice = {"column1", "column2"};
-	cout << "\tTableDoesNotExist: ";
-	if(get<0>(t.apiReadTable("nonexistentTable", columnChoice)).empty() && get<1>(t.apiReadTable("nonexistentTable", columnChoice)).empty())
-		cout << "Success" << endl;
-	else
-		cout << "Failed" << endl;
-
-	columns = {make_tuple("Name", 0), make_tuple("Age", 1)};
-	cout << "\tColuimnsDoNotExist: ";
-	if(false == t.addTable("People", columns, keys))
-		cout << "Success" << endl;
-	else
-		cout << "Failed" << endl;
-
+TEST_F(GantoApiTest, AddEntrySuccess) {
+    vector<variant<string, double>> row = {"key1", 1.0};
+    EXPECT_TRUE(testApi.apiAddEntry("testTable", row));
 }
 
 
-
-
-int main(){
-	addTableTest();
-	updateTableTest();
-	deleteTableTest();
-	readTableTest();
-	return 0;
+TEST_F(GantoApiTest, AddEntryFailureDuplicateKey) {
+    vector<variant<string, double>> row = {"key1", 1.0};
+    EXPECT_TRUE(testApi.apiAddEntry("testTable", row));
+    EXPECT_FALSE(testApi.apiAddEntry("testTable", row));  // Duplicate key
 }
+
+

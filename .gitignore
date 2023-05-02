@@ -18,3 +18,8 @@ CMakeCache.txt
 Testing/Temporary/CTestCostData.txt
 Testing/Temporary/LastTest.log
 Testing/Temporary/LastTestsFailed.log
+libGantoApi.so
+GantoApiTests
+cmake_install_.cmake
+a.exe
+

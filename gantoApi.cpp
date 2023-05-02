@@ -123,4 +123,39 @@ bool apiSetRequired(string tableName, string columnName, bool required){
 	}
 	return false;
 }
+bool apiAddEntry(string tableName, vector<variant<string, double>> row) {
+    table* tempTable = tables.getTablePointer(tableName);
+    if (tempTable->name == "error") {
+        return false;
+    }
+    // Check for duplicate or null key values
+    for (int i = 0; i < tempTable->entries.size(); ++i) {
+        const auto& entry = tempTable->entries[i];
+        bool duplicate = true;
+        for (int j = 0; j < tempTable->keys.size(); ++j) {
+            const int keyPos = tempTable->keys[j];
+            if (entry->at(keyPos) != row[keyPos]) {
+                duplicate = false;
+                break;
+            }
+            if (row[keyPos].index() == 0 && get<string>(row[keyPos]).empty()) {
+                return false;  // Null key value
+            }
+        }
+        if (duplicate) {
+            return false;  // Duplicate key value
+        }
+    }
+    // Check for null values in required columns
+    for (int i = 0; i < tempTable->required.size(); ++i) {
+        const int requiredPos = tempTable->required[i];
+        if (row[requiredPos].index() == 0 && get<string>(row[requiredPos]).empty()) {
+            return false;  // Null required value
+        }
+    }
+    // Add the new entry
+    tempTable->entries.push_back(new vector<variant<string, double>>(row));
+    return true;
+}
+
 };
