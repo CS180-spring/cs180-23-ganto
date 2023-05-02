@@ -18,3 +18,5 @@ CMakeCache.txt
 Testing/Temporary/CTestCostData.txt
 Testing/Temporary/LastTest.log
 Testing/Temporary/LastTestsFailed.log
+tests.cpp
+a.exe

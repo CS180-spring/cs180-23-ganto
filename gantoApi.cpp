@@ -41,19 +41,36 @@ class api{
 
 bool api::apiAddEntry(string tableName, vector<variant<string, double>> columns){
 	table* t = tables.getTablePointer(tableName);
+	vector<variant<string, double>> *entry = new vector<variant<string, double>>();
+	bool valid = true;
 	for(int i = 0; i < columns.size(); i++){
+		variant<string, double> colVal;
 		if(holds_alternative<string>(columns[i])){
 			if(0 != get<1>(t->columns[i]))
 				return false;
-			t->entries[i]->push_back(get<string>(columns[i]));
+			colVal = get<string>(columns[i]);
 		}
-		else if(holds_alternative<string>(columns[i])){
+		else if(holds_alternative<double>(columns[i])){
 			if(1 != get<1>(t->columns[i]))
 				return false;
-			t->entries[i]->push_back(get<double>(columns[i]));
+			colVal = get<double>(columns[i]);
+		}
+		if(false == tables.keyUsed(t, i, colVal)){
+			entry->push_back(colVal);
+		}
+		else{
+			valid = false;
+			break;
 		}
 	}
-	return true;
+	if(true == valid){
+		t->entries.push_back(entry);
+		return true;
+	}
+	else{
+		delete entry;
+		return false;
+	}
 }
 
 

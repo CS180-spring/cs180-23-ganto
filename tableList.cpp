@@ -21,7 +21,35 @@ class tableList{
 		vector<vector<string>> getDependants(string tableName);
 		int getColumnType(string tableName, string columnName);
 		int getColumnPosition(string tableName, string columnName);
+		bool keyUsed(table* workingTable, int columnPos, variant<string, double> data);
 };
+
+bool tableList::keyUsed(table* workingTable, int columnPos, variant<string, double> data){
+	int type = get<1>(workingTable->columns[columnPos]);
+	string stringData;
+	double doubleData;
+	if(0 == type){
+		stringData = get<string>(data);
+	}
+	else if(1 == type){
+		doubleData = get<double>(data);
+	}
+
+	for(int i = 0; i < workingTable->entries.size(); i++){
+		switch(type){
+			case 0:
+				if(stringData == get<string>(workingTable->entries[i]->at(columnPos)))
+					return true;
+				break;
+			case 1:
+				if(doubleData == get<double>(workingTable->entries[i]->at(columnPos)))
+					return true;
+				break;
+		}
+	}
+
+	return false;
+}
 
 int tableList::getColumnPosition(int tablePos, string name){
 	for(int i = 0; i < tables[tablePos]->columns.size(); i++){
