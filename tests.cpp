@@ -253,6 +253,7 @@ void deleteEntryTest(){
 		cout << "Failed" << endl;
 
 }
+*/
 
 void readEntryTest(){
 	t.apiAddTable("ReadEntry", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
@@ -275,7 +276,7 @@ void readEntryTest(){
 	cout << "\tNoCondition: ";
 	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"});
 	bool success = true;
-	for(int i = 0; entries.size(); i++){
+	for(int i = 0; i < entries.size(); i++){
 		if(get<0>(entries[i][0]) != get<0>(returned[i][0])){
 			success = false;
 			break;
@@ -296,7 +297,7 @@ void readEntryTest(){
 
 	cout << "\tOneCondition: ";
 	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"}, {{"Double", 1, 10.0}});
-	for(int i = 1; entries.size(); i++){
+	for(int i = 1; i < entries.size(); i++){
 		if(get<0>(entries[i][0]) != get<0>(returned[i-1][0])){
 			success = false;
 			break;
@@ -317,20 +318,16 @@ void readEntryTest(){
 
 	cout << "\tMultipleConditions: ";
 	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"}, {{"Double", 1, 10.0}, {"String", 0, "entry3"}});
-	for(int i = 1; entries.size(); i++){
-		if(get<0>(entries[i][0]) != get<0>(returned[i-1][0])){
-			success = false;
-			break;
-		}
-		else if(get<1>(entries[i][1]) != get<1>(returned[i-1][1])){
-			success = false;
-			break;
-		}
-		else if(get<0>(entries[i][2]) != get<0>(returned[i-1][2])){
-			success = false;
-			break;
-		}
+	if(get<0>(entries[2][0]) != get<0>(returned[0][0])){
+		success = false;
 	}
+	else if(get<1>(entries[2][1]) != get<1>(returned[0][1])){
+		success = false;
+	}
+	else if(get<0>(entries[2][2]) != get<0>(returned[0][2])){
+		success = false;
+	}
+
 	if(true == success)
 		cout << "Success" << endl;
 	else
@@ -359,8 +356,6 @@ void readEntryTest(){
 
 }
 
-*/
-
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
 	addTableTest();
@@ -370,6 +365,6 @@ int main(){
 	addEntryTest();
 	updateEntryTest();
 	//deleteEntryTest();
-	//readEntryTest();
+	readEntryTest();
 	return 0;
 }

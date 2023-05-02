@@ -285,9 +285,10 @@ vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int
 	string columnName = "";
 	int colPos = 0;
 	for(int i = 0; i < accepted.size(); i++){
+		bool removed = false;
 		int entry = accepted[i];
 		for(int j = 0; j < conditions.size(); j++){
-			if(columnName == get<0>(conditions[j])){
+			if(columnName != get<0>(conditions[j])){
 				columnName = get<0>(conditions[j]);
 				colPos = tables.getColumnPosition(workingTable.name, columnName);	//Could improve performance by making new getColumn[.]s that takes tables
 			}
@@ -301,6 +302,7 @@ vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int
 					if(false == compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))){
 						accepted.erase(accepted.begin() + i);
 						i--;
+						removed = true;
 					}
 					break;
 				case 1:
@@ -309,11 +311,14 @@ vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int
 					if(false == compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))){
 						accepted.erase(accepted.begin() + i);
 						i--;
+						removed = true;
 					}
 					break;
 				default:
 					return {};
 			}
+			if(true == removed)
+				break;
 		}
 	}
 	return accepted;
@@ -406,3 +411,36 @@ bool api::apiUpdateEntry(string tableName, string column, vector<tuple<string, i
 
     return true;
 }
+
+vector<vector<variant<string, double>>> api::apiReadEntry(string tableName, vector<string> displayColumns) {
+    return apiReadEntry(tableName, displayColumns, {});
+}
+
+vector<vector<variant<string, double>>> api::apiReadEntry(string tableName, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions) {
+    table* t = tables.getTablePointer(tableName);
+    vector<vector<variant<string, double>>> result;
+	if(nullptr == t){
+		return {};
+	}
+
+	vector<int> columnPositions;
+	for (string col : displayColumns) {
+	    for (int i = 0; i < t->columns.size(); i++) {
+	        if (col == get<0>(t->columns[i])) {
+	            columnPositions.push_back(i);
+	            break;
+	        }
+	    }
+	}
+	vector<int> accepted = getAcceptedEntries(*t, conditions);
+	for(int i = 0; i < accepted.size(); i++){
+		int entry = accepted[i];
+		vector<variant<string, double>> entryResult;
+		for (int pos : columnPositions) {
+			entryResult.push_back(t->entries[entry]->at(pos));
+		}
+		result.push_back(entryResult);
+	}
+    return result;
+}
+
