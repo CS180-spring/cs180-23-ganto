@@ -144,14 +144,26 @@ void addEntryTest(){
 */
 
 }
-/*
+
 void updateEntryTest(){
 	t.apiAddTable("UpdateEntry", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
+	vector<vector<variant<string, double>>> returned;
+	vector<vector<variant<string, double>>> entries;
+	entries.push_back({{"entry1", 10.0, "#1"}});
+	entries.push_back({{"entry2", 20.0, "#2"}});
+	entries.push_back({{"entry3", 10.3, "#3"}});
+	entries.push_back({{"entry4", 14.0, "#4"}});
+	entries.push_back({{"entry5", 55.0, "#5"}});
+	entries.push_back({{"entry6", 66.6, "#6"}});
+	for(int i = 0; i < entries.size(); i++){
+		t.apiAddEntry("UpdateEntry", entries[i]);
+	}
+
 
 
 	cout << "update Entry Tests" << endl;
 
-	cout << "\tNoConditions(double): ";
+	cout << "\tNoConditions(string): ";
 	if(true == t.apiUpdateEntry("UpdateEntry", "String", "joe"))
 		cout << "Success" << endl;
 	else
@@ -169,11 +181,13 @@ void updateEntryTest(){
 	else
 		cout << "Failed" << endl;
 
+	/*
 	cout << "\tNullKeyValue: ";
 	if(true == t.apiUpdateEntry("UpdateEntry", "Double", nullptr))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
+	*/
 
 	cout << "\tMultipleConditions: ";
 	if(true == t.apiUpdateEntry("UpdateEntry", "String", {{"Double", 1, 10.0}, {"String", 0, "joe"}}, "zoe"))
@@ -182,6 +196,7 @@ void updateEntryTest(){
 		cout << "Failed" << endl;
 }
 
+/*
 void deleteEntryTest(){
 	t.apiAddTable("DeleteEntry", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
 	vector<vector<variant<string, double>>> returned;
@@ -349,11 +364,11 @@ void readEntryTest(){
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
 	addTableTest();
-	//updateTableTest();
-	//deleteTableTest();
-	//readTableTest();
+	updateTableTest();
+	deleteTableTest();
+	readTableTest();
 	addEntryTest();
-	//updateEntryTest();
+	updateEntryTest();
 	//deleteEntryTest();
 	//readEntryTest();
 	return 0;

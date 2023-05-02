@@ -2,6 +2,9 @@
 class api{
 	private:
 	tableList tables;
+	vector<int> getAcceptedEntries(table workingTable, vector<tuple<string, int, variant<string, double>>> conditions);
+	bool compare(variant<string, double> left, int op, variant<string, double> right);	
+	bool keyUsed(table* workingTable, int columnPos, variant<string, double> data);
 
 	public:
 	api(){ tables = tableList(); }
@@ -39,8 +42,37 @@ class api{
 
 };
 
+bool api::keyUsed(table* workingTable, int columnPos, variant<string, double> data){
+	int type = get<1>(workingTable->columns[columnPos]);
+	string stringData;
+	double doubleData;
+	if(0 == type){
+		stringData = get<string>(data);
+	}
+	else if(1 == type){
+		doubleData = get<double>(data);
+	}
+
+	for(int i = 0; i < workingTable->entries.size(); i++){
+		switch(type){
+			case 0:
+				if(stringData == get<string>(workingTable->entries[i]->at(columnPos)))
+					return true;
+				break;
+			case 1:
+				if(doubleData == get<double>(workingTable->entries[i]->at(columnPos)))
+					return true;
+				break;
+		}
+	}
+
+	return false;
+}
+
 bool api::apiAddEntry(string tableName, vector<variant<string, double>> columns){
 	table* t = tables.getTablePointer(tableName);
+	if(nullptr == t)
+		return false;
 	vector<variant<string, double>> *entry = new vector<variant<string, double>>();
 	bool valid = true;
 	for(int i = 0; i < columns.size(); i++){
@@ -55,7 +87,7 @@ bool api::apiAddEntry(string tableName, vector<variant<string, double>> columns)
 				return false;
 			colVal = get<double>(columns[i]);
 		}
-		if(false == tables.keyUsed(t, i, colVal)){
+		if(false == keyUsed(t, i, colVal)){
 			entry->push_back(colVal);
 		}
 		else{
@@ -124,7 +156,11 @@ bool api::apiAddTable(string tableName, vector<tuple<string, int>> columns, vect
 
 	table *newTable = new table(tableName);
 	newTable->columns = columns;
-	//newTable->keys = localKeys;
+	vector<tuple<string, string>> tmpKeys;
+	for(int i = 0; i < localKeys.size(); i++){
+		tmpKeys.push_back({"", get<0>(columns[localKeys[i]])});
+	}
+	newTable->keys = tmpKeys;
 
 	tables.addTable(newTable);
 	tables.makeForeign(foreignPos, tableName);	//Marks columns as having dependants
@@ -160,7 +196,7 @@ tuple<vector<string>, vector<vector<int>>> api::apiReadTable(string tableName, v
 
 bool api::apiAddColumn(string tableName, vector<tuple<string, int>> columnNames){
 	table* tempTable = tables.getTablePointer(tableName);
-	if (tempTable->name == "error") {
+	if (nullptr == tempTable) {
 	    return false;
 	}
 	for(int i=0; i<columnNames.size(); i++){
@@ -172,7 +208,7 @@ bool api::apiAddColumn(string tableName, vector<tuple<string, int>> columnNames)
 
 bool api::apiRemoveColumn(string tableName, vector<string> columnNames){
 	table* tempTable = tables.getTablePointer(tableName);
-	if (tempTable->name == "error") {
+	if (nullptr == tempTable) {
 	    return false;
 	}
 	int index = -1;
@@ -191,7 +227,7 @@ bool api::apiRemoveColumn(string tableName, vector<string> columnNames){
 
 bool api::apiRenameColumn(string tableName, string columnName, string newName){
 	table* tempTable = tables.getTablePointer(tableName);
-	if (tempTable->name == "error") {
+	if (nullptr == tempTable) {
 	    return false;
 	}
 	for(int i=0; i<tempTable->columns.size(); i++){
@@ -205,7 +241,7 @@ bool api::apiRenameColumn(string tableName, string columnName, string newName){
 
 bool api::apiSetRequired(string tableName, string columnName, bool required){
 	table* tempTable = tables.getTablePointer(tableName);
-	if (tempTable->name == "error") {
+	if (nullptr == tempTable) {
 	    return false;
 	}
 	for(int i=0; i<tempTable->columns.size(); i++){
@@ -217,48 +253,84 @@ bool api::apiSetRequired(string tableName, string columnName, bool required){
 	return false;
 }
 
-bool api::apiUpdateEntry(string tableName, string columns, double newData) {
-    table* t = tables.getTablePointer(tableName);
-
-    if (t->name == "error") {
-        return false;
-    }
-	
-    if(tables.getColumnType(tableName, columns) == 1){
-		int tablePos = tables.getTablePosition(tableName);
-		int columnPos = tables.getColumnPosition(tablePos, columns);
-        for (int i = 0; i < t->columns.size(); i++) {
-            t->entries[i]->at(columnPos) = newData;
+bool api::compare(variant<string, double> left, int op, variant<string, double> right){		//Assumes types are the same, check before calling
+	    switch (op) {
+            case 0:  
+                return left == right;
+            case 1:  
+                return left > right;
+            case 2:  
+                return left >= right;
+            case 3:  
+                return left < right;
+            case 4:  
+                return left <= right;
+            default:
+                return false;  
         }
-        return true;
-    }    
-
-    return false;
 }
 
-bool api::apiUpdateEntry(string tableName, string columns, string newData) {
-    table* t = tables.getTablePointer(tableName);
 
-    if (t->name == "error") {
-        return false;
-    }
-	
-    if(tables.getColumnType(tableName, columns) == 0){
-		int tablePos = tables.getTablePosition(tableName);
-		int columnPos = tables.getColumnPosition(tablePos, columns);
-        for (int i = 0; i < t->columns.size(); i++) {
-            t->entries[i]->at(columnPos) = newData;
-        }
-        return true;
-    }    
 
-    return false;}
-	
+vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int, variant<string, double>>> conditions){
+	vector<int> accepted;
+	for(int i = 0; i < workingTable.entries.size(); i++){
+		accepted.push_back(i);
+	}
+
+	if(0 == conditions.size()){		//no conditions means apply change to all entries
+		return accepted;
+	}
+
+	string columnName = "";
+	int colPos = 0;
+	for(int i = 0; i < accepted.size(); i++){
+		int entry = accepted[i];
+		for(int j = 0; j < conditions.size(); j++){
+			if(columnName == get<0>(conditions[j])){
+				columnName = get<0>(conditions[j]);
+				colPos = tables.getColumnPosition(workingTable.name, columnName);	//Could improve performance by making new getColumn[.]s that takes tables
+			}
+			int operation = get<1>(conditions[j]);
+			variant<string, double> compareWith = get<2>(conditions[j]);
+			int type = get<1>(workingTable.columns[colPos]);
+			switch(type){
+				case 0:
+					if(false == holds_alternative<string>(compareWith))
+						return {};
+					if(false == compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))){
+						accepted.erase(accepted.begin() + i);
+						i--;
+					}
+					break;
+				case 1:
+					if(false == holds_alternative<double>(compareWith))
+						return {};
+					if(false == compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))){
+						accepted.erase(accepted.begin() + i);
+						i--;
+					}
+					break;
+				default:
+					return {};
+			}
+		}
+	}
+	return accepted;
+}
+
+bool api::apiUpdateEntry(string tableName, string column, double newData) {
+    return apiUpdateEntry(tableName, column, {}, newData);
+}
+
+bool api::apiUpdateEntry(string tableName, string column, string newData) {
+    return apiUpdateEntry(tableName, column, {}, newData);
+}
+
 bool api::apiUpdateEntry(string tableName, string column, vector<tuple<string, int, variant<string, double>>> conditions, double newData) {
-	/*
     table* t = tables.getTablePointer(tableName);
 
-    if (t->name == "error") {
+    if (nullptr == t) {
         return false;
     }
 
@@ -278,41 +350,27 @@ bool api::apiUpdateEntry(string tableName, string column, vector<tuple<string, i
         return false;
     }
 
-    for (int i = 0; i < t->columns.size(); i++) {
-        double currentValue = get<1>(t->columns[i][columnPos]);
-        bool cond = false;
-        switch (operation) {
-            case 0:  
-                cond = currentValue == compareWith;
-                break;
-            case 1:  
-                cond = currentValue > compareWith;
-                break;
-            case 2:  
-                cond = currentValue >= compareWith;
-                break;
-            case 3:  
-                cond = currentValue < compareWith;
-                break;
-            case 4:  
-                cond = currentValue <= compareWith;
-                break;
-            default:
-                return false;  
-        }
-        if (cond) {
-            t->columns[i][columnPos] = newData;
-        }
-    }
-	*/
+	for(int i = 0; i < t->keys.size(); i++){
+		if(column == get<1>(t->keys[i])){
+			if(true == keyUsed(t, columnPos, newData)){		//Check for duplicate key value
+				return false;
+			}
+			break;
+		}
+	}
+
+	vector<int> accepted = getAcceptedEntries(*t, conditions);
+	for(int i = 0; i < accepted.size(); i++){
+		t->entries[accepted[i]]->at(columnPos) = newData;
+	}
+
     return true;
 }
 
 bool api::apiUpdateEntry(string tableName, string column, vector<tuple<string, int, variant<string, double>>> conditions, string newData){
-	/*
     table* t = tables.getTablePointer(tableName);
-
-    if (t->name == "error") {
+	
+    if (nullptr == t) {
         return false;
     }
 
@@ -328,36 +386,23 @@ bool api::apiUpdateEntry(string tableName, string column, vector<tuple<string, i
         return false;  
     }
 
-    if(getColumnType(tableName, column) != 0){
+    if(tables.getColumnType(tableName, column) != 0){
         return false;
     }
 
-    for (int i = 0; i < t->columns.size(); i++) {
-        double currentValue = get<1>(t->columns[i][columnPos]);
-        bool cond = false;
-        switch (operation) {
-            case 0:  
-                cond = currentValue == compareWith;
-                break;
-            case 1:  
-                cond = currentValue > compareWith;
-                break;
-            case 2:  
-                cond = currentValue >= compareWith;
-                break;
-            case 3:  
-                cond = currentValue < compareWith;
-                break;
-            case 4:  
-                cond = currentValue <= compareWith;
-                break;
-            default:
-                return false;  
-        }
-        if (cond) {
-            t->columns[i][columnPos] = newData;
-        }
-    }
-	*/
+	for(int i = 0; i < t->keys.size(); i++){
+		if(column == get<1>(t->keys[i])){
+			if(true == keyUsed(t, columnPos, newData)){		//Check for duplicate key value
+				return false;
+			}
+			break;
+		}
+	}
+	
+	vector<int> accepted = getAcceptedEntries(*t, conditions);
+	for(int i = 0; i < accepted.size(); i++){
+		t->entries[accepted[i]]->at(columnPos) = newData;
+	}
+
     return true;
 }
