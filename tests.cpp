@@ -8,21 +8,21 @@ void addTableTest(){
 	vector<tuple<string, int>> columns = {{"name", 0}, {"age", 1}, {"location", 0}};
 	vector<int> keys = {0};
 	vector<int> requiredPos;
-	cout << "\tBasic Test: ";
+	cout << "\tBasic Test:\t\t";
 	if(true == t.apiAddTable("test", columns, keys))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 	columns = {make_tuple("Name", 0), make_tuple("Age", 1)};
-	cout << "\tValidTable: ";
+	cout << "\tValidTable:\t\t";
 	if(true == t.apiAddTable("People", columns, keys))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 	columns = {make_tuple("Name", 0), make_tuple("Age", 1)};
-	cout << "\tInvalidTable: ";
+	cout << "\tInvalidTable:\t\t";
 	if(false == t.apiAddTable("People", columns, keys))
 		cout << "Success" << endl;
 	else
@@ -30,13 +30,13 @@ void addTableTest(){
 	
 	
 	columns = {make_tuple("Name", 0), make_tuple("Age", 1)};
-	cout << "\tDuplicateTable: ";
+	cout << "\tDuplicateTable:\t\t";
 	if(false == t.apiAddTable("People", columns, keys))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tKeyIsForeign: ";
+	cout << "\tKeyIsForeign:\t\t";
 	if(true == t.apiAddTable("Foreign", {{"name", 0}, {"birthPlace", 0}}, {}, {make_tuple("People", "name")}))
 		cout << "Success" << endl;
 	else
@@ -48,14 +48,14 @@ void updateTableTest(){
 	vector<tuple<string, int>> columns = {{"time", 1}, {"distance", 1}, {"personality", 0}};
 	vector<int> keys = {0};
 	vector<int> requiredPos;
-	cout << "\tAdd Column Test: ";
+	cout << "\tAdd Column Test:\t";
 	if(true == t.apiAddColumn("test", columns))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 	/*
-	cout << "\tColumnUsedAsForeignKey: ";
+	cout << "\tColumnUsedAsForeignKey:\t\t";
 	if(false == t.apiAddTable("People", columns, keys))
 		cout << "Success" << endl;
 	else
@@ -68,19 +68,19 @@ void deleteTableTest(){
 	vector<tuple<string, int>> columns = {{"name", 0}, {"age", 1}, {"location", 0}};
 	vector<int> keys = {0};
 	vector<int> requiredPos;
-	cout << "\tBasic Test: ";
+	cout << "\tBasic Test:\t\t";
 	if(true == t.apiRemoveTable("test"))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 	/*
-	cout << "\tTableUsedAsForeignKey: ";
+	cout << "\tTableUsedAsForeignKey:\t\t";
 	if(false == t.apiAddTable("People", columns, keys))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tTablePosUpdated: ";
+	cout << "\tTablePosUpdated:\t\t";
 	if(false == t.apiAddTable("People", columns, keys))
 		cout << "Success" << endl;
 	else
@@ -97,14 +97,14 @@ void readTableTest(){
 	t.apiAddTable("test", columns, keys);
 
 	vector<string> columnChoice = {"column1", "column2"};
-	cout << "\tTableDoesNotExist: ";
+	cout << "\tTableDoesNotExist:\t";
 	if(get<0>(t.apiReadTable("nonexistentTable", columnChoice)).empty() && get<1>(t.apiReadTable("nonexistentTable", columnChoice)).empty())
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 	columns = {make_tuple("Name", 0), make_tuple("Age", 1)};
-	cout << "\tColumnsDoNotExist: ";
+	cout << "\tColumnsDoNotExist:\t";
 	if(false == t.apiAddTable("People", columns, keys))
 		cout << "Success" << endl;
 	else
@@ -116,27 +116,27 @@ void readTableTest(){
 void addEntryTest(){
 	t.apiAddTable("AddEntry", {{"String", 0}, {"Double", 1}}, {0});
 	cout << "Add Entry Tests" << endl;
-	cout << "\tValidEntry: ";
+	cout << "\tValidEntry:\t\t";
 	if(true == t.apiAddEntry("AddEntry", {{"Valid", 1.0}}))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tDuplicateKeyValue: ";
+	cout << "\tDuplicateKeyValue:\t";
 	if(false == t.apiAddEntry("AddEntry", {{"Valid", 2.0}}))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 /*		nullptr doesn't work with variants?
-	cout << "\tNullKeyValue: ";
+	cout << "\tNullKeyValue:\t\t";
 	if(false == t.apiAddEntry("AddEntry", {nullptr, 3.0}))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 	t.apiSetRequired("AddEntry", "Double", true);
-	cout << "\tNullRequiredValue: ";
+	cout << "\tNullRequiredValue:\t\t";
 	if(false == t.apiAddEntry("AddEntry", {"AlsoValid", nullptr}))
 		cout << "Success" << endl;
 	else
@@ -163,40 +163,39 @@ void updateEntryTest(){
 
 	cout << "update Entry Tests" << endl;
 
-	cout << "\tNoConditions(string): ";
+	cout << "\tNoConditions(string):\t";
 	if(true == t.apiUpdateEntry("UpdateEntry", "String", "joe"))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tOneCondition: ";
+	cout << "\tOneCondition:\t\t";
 	if(true == t.apiUpdateEntry("UpdateEntry", "String", {{"Third Thing", 0, "#2"}}, "bob"))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tDuplicateKeyValue: ";
+	cout << "\tDuplicateKeyValue:\t";
 	if(false == t.apiUpdateEntry("UpdateEntry", "Double", 10))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 	/*
-	cout << "\tNullKeyValue: ";
+	cout << "\tNullKeyValue:\t\t";
 	if(true == t.apiUpdateEntry("UpdateEntry", "Double", nullptr))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 	*/
 
-	cout << "\tMultipleConditions: ";
+	cout << "\tMultipleConditions:\t";
 	if(true == t.apiUpdateEntry("UpdateEntry", "String", {{"Double", 1, 10.0}, {"String", 0, "joe"}}, "zoe"))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 }
 
-/*
 void deleteEntryTest(){
 	t.apiAddTable("DeleteEntry", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
 	vector<vector<variant<string, double>>> returned;
@@ -208,35 +207,35 @@ void deleteEntryTest(){
 	entries.push_back({{"entry5", 55.0, "#5"}});
 	entries.push_back({{"entry6", 66.6, "#6"}});
 	for(int i = 0; i < entries.size(); i++){
-		t.apiAddEntry("ReadEntry", entries[i]);
+		t.apiAddEntry("DeleteEntry", entries[i]);
 	}
 
 
 
 	cout << "delete Entry Tests" << endl;
 
-	cout << "\tValidDeleteWholeEntry: ";
-	if(true == t.apiRemoveEntry("DeleteEntry", {{"Third  Thing", 0, "#1"}}))
+	cout << "\tValidDeleteWholeEntry:\t";
+	if(true == t.apiRemoveEntry("DeleteEntry", {{"Third Thing", 0, "#1"}}))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 
-	cout << "\tValidDeleteAll: ";
+	cout << "\tValidDeleteAll:\t\t";
 	if(true == t.apiRemoveEntry("DeleteEntry", "String", {}))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tDeleteKeyValue: ";
+	cout << "\tDeleteKeyValue:\t\t";
 	if(false == t.apiRemoveEntry("DeleteEntry", "Double", {}))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 
-	cout << "\tEntryDoesNotExist: ";
-	if(false == t.apiRemoveEntry("DeleteEntry", "", {}))
+	cout << "\tEntryDoesNotExist:\t";
+	if(false == t.apiRemoveEntry("DeleteEntry", "Not a real column", {}))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
@@ -245,7 +244,7 @@ void deleteEntryTest(){
 	//Integration tests
 	if(false == integrationTest)
 		return;
-	cout << "\tDeletedEntry" << endl;
+	cout << "\tDeletedEntry:\t" << endl;
 	returned = t.apiReadEntry("DeleteEntry", {"String"});
 	if(nullptr == &get<0>(returned[0][0]))	//Deleted column elements return nullptr. I think this allows for that check?
 		cout << "Success" << endl;
@@ -253,7 +252,7 @@ void deleteEntryTest(){
 		cout << "Failed" << endl;
 
 }
-*/
+
 
 void readEntryTest(){
 	t.apiAddTable("ReadEntry", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
@@ -273,7 +272,7 @@ void readEntryTest(){
 
 	cout << "Read Entry Tests" << endl;
 	
-	cout << "\tNoCondition: ";
+	cout << "\tNoCondition:\t\t";
 	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"});
 	bool success = true;
 	for(int i = 0; i < entries.size(); i++){
@@ -295,7 +294,7 @@ void readEntryTest(){
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tOneCondition: ";
+	cout << "\tOneCondition:\t\t";
 	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"}, {{"Double", 1, 10.0}});
 	for(int i = 1; i < entries.size(); i++){
 		if(get<0>(entries[i][0]) != get<0>(returned[i-1][0])){
@@ -316,7 +315,7 @@ void readEntryTest(){
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tMultipleConditions: ";
+	cout << "\tMultipleConditions:\t";
 	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"}, {{"Double", 1, 10.0}, {"String", 0, "entry3"}});
 	if(get<0>(entries[2][0]) != get<0>(returned[0][0])){
 		success = false;
@@ -333,21 +332,21 @@ void readEntryTest(){
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tNoResults: ";
+	cout << "\tNoResults:\t\t";
 	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"}, {{"Double", 3, 10.0}, {"String", 0, "entry3"}});
 	if(0 == returned.size())
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 		
-	cout << "\tInvalidOperator: ";
+	cout << "\tInvalidOperator:\t";
 	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"}, {{"String", 3, "entry1"}});
 	if(0 == returned.size())
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tWrongType: ";
+	cout << "\tWrongType:\t\t";
 	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"}, {{"Double", 3, "entry1"}});
 	if(0 == returned.size())
 		cout << "Success" << endl;
@@ -364,7 +363,7 @@ int main(){
 	readTableTest();
 	addEntryTest();
 	updateEntryTest();
-	//deleteEntryTest();
+	deleteEntryTest();
 	readEntryTest();
 	return 0;
 }

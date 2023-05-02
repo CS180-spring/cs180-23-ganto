@@ -42,6 +42,47 @@ class api{
 
 };
 
+bool api::apiRemoveEntry(string tableName, vector<tuple<string, int, variant<string, double>>> conditions){
+	return apiRemoveEntry(tableName, "", conditions);
+}
+
+bool api::apiRemoveEntry(string tableName, string column, vector<tuple<string, int, variant<string, double>>> conditions){
+	table* t = tables.getTablePointer(tableName);
+	if(nullptr == t){
+		return false;
+	}
+	int columnPos;
+	bool wholeEntry = false;
+	if("" != column){
+		wholeEntry = true;
+		columnPos = tables.getColumnPosition(tableName, column);
+		if(-1 == columnPos)
+			return false;
+		for(int i = 0; i < t->keys.size(); i++){
+			if(get<1>(t->keys[i]) == column){	//Trying to delete a key value
+				return false;
+			}
+		}
+	}
+	vector<int> accepted = getAcceptedEntries(*t, conditions);
+	for(int i = accepted.size() - 1; i >= 0; i--){			//Iterating backwards to avoid changing index positions
+		int entry = accepted[i];
+		if(true == wholeEntry){
+			if(0 == get<1>(t->columns[columnPos])){
+				t->entries[entry]->at(columnPos) = "";		//String can't be nullptr
+			}
+			else{
+				t->entries[entry]->at(columnPos) = nullptr;
+			}
+		}
+		else{
+			delete t->entries[entry];						//Each entry is a new object
+			t->entries.erase(t->entries.begin() + entry);	//Remove the entry from the list
+		}
+	}
+	return true;
+}
+
 bool api::keyUsed(table* workingTable, int columnPos, variant<string, double> data){
 	int type = get<1>(workingTable->columns[columnPos]);
 	string stringData;
@@ -291,6 +332,8 @@ vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int
 			if(columnName != get<0>(conditions[j])){
 				columnName = get<0>(conditions[j]);
 				colPos = tables.getColumnPosition(workingTable.name, columnName);	//Could improve performance by making new getColumn[.]s that takes tables
+				if(-1 == colPos)
+					return {};
 			}
 			int operation = get<1>(conditions[j]);
 			variant<string, double> compareWith = get<2>(conditions[j]);
