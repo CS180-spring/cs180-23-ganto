@@ -4,12 +4,12 @@ class tableList{
 	private:
 		vector<table*> tables;
 		table errorTable = table("error");	//Used to return errors for functions that return tables
-		int getTablePosition(string name);
-		int getColumnPosition(int tablePos, string name);
 
 	public:
 		tableList(){};
 		
+		int getColumnPosition(int tablePos, string name);
+		int getTablePosition(string name);
 		table getTable(string name);
 		table getTable(int pos);
 		vector<table*> getAllTables();
@@ -20,6 +20,7 @@ class tableList{
 		void makeForeign(vector<tuple<string, string>> keys, string caller);
 		vector<vector<string>> getDependants(string tableName);
 		int getColumnType(string tableName, string columnName);
+		int getColumnPosition(string tableName, string columnName);
 };
 
 int tableList::getColumnPosition(int tablePos, string name){
@@ -28,6 +29,10 @@ int tableList::getColumnPosition(int tablePos, string name){
 			return i;
 	}
 	return -1;
+}
+
+int tableList::getColumnPosition(string tableName, string columnName){
+	return getColumnPosition(getTablePosition(tableName), columnName);
 }
 
 int tableList::getColumnType(string tableName, string columnName){
@@ -127,23 +132,4 @@ bool tableList::removeTable(string tableName){
         return true;
     }
 	return false;
-}
-
-int tableList::getColumnPosition(int tablePos, string name){
-    for(int i = 0; i < tables[tablePos]->columns.size(); i++){
-        if(name == get<0>(tables[tablePos]->columns[i]))
-            return i;
-    }
-}
-
-int tableList::getColumnType(string tableName, string columnName){
-    int tablePos = getTablePosition(tableName);
-    if(-1 == tablePos)
-        return -1;
-
-    int columnPos = getColumnPosition(tablePos, columnName);
-    if(-1 == columnPos)
-        return -1;
-
-    return get<1>(tables[tablePos]->columns[columnPos]);
 }

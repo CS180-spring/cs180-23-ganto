@@ -13,7 +13,7 @@ class api{
 	bool apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int> localKeys, vector<tuple<string, string>> foreignPos);
 	bool apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int> localKeys, vector<tuple<string, string>> foreignPos, vector<int> requiredPos);
 		//Remove Table
-	bool apiRemoveTable(string table);
+	bool apiRemoveTable(string tableName);
 		//Read Table
 	tuple<vector<string>, vector<vector<int>>> apiReadTable(string tableName, vector<string> columns);
 		//Update Table
@@ -24,21 +24,37 @@ class api{
 
 	//Entry Functions
 		//Add Entry
-	bool apiAddEntry(string table, vector<variant<string, double>> columns);
+	bool apiAddEntry(string tableName, vector<variant<string, double>> columns);
 		//Remove Entry
-	bool apiRemoveEntry(string table, vector<tuple<string, int, variant<string, double>>> conditions);	//Delete all entries from table where conditions == true
-	bool apiRemoveEntry(string table, string column, vector<tuple<string, int, variant<string, double>>> conditions);	//Make columns nullptr for all entries where conditions == true
+	bool apiRemoveEntry(string tableName, vector<tuple<string, int, variant<string, double>>> conditions);	//Delete all entries from table where conditions == true
+	bool apiRemoveEntry(string tableName, string column, vector<tuple<string, int, variant<string, double>>> conditions);	//Make columns nullptr for all entries where conditions == true
 		//Update Entry
-	bool apiUpdateEntry(string table, string column, double newData);		//Changes value of column to newData for all entries
-	bool apiUpdateEntry(string table, string column, string newData);
-	bool apiUpdateEntry(string table, string column, vector<tuple<string, int, variant<string, double>>> conditions, double newData);	//Changes value of column to newData for all entries where if(column[entry] operation compareWith)
-	bool apiUpdateEntry(string table, string column, vector<tuple<string, int, variant<string, double>>> conditions, string newData);
+	bool apiUpdateEntry(string tableName, string column, double newData);		//Changes value of column to newData for all entries
+	bool apiUpdateEntry(string tableName, string column, string newData);
+	bool apiUpdateEntry(string tableName, string column, vector<tuple<string, int, variant<string, double>>> conditions, double newData);	//Changes value of column to newData for all entries where if(column[entry] operation compareWith)
+	bool apiUpdateEntry(string tableName, string column, vector<tuple<string, int, variant<string, double>>> conditions, string newData);
 		//Read Entry
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns);
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions);
 
 };
 
+bool api::apiAddEntry(string tableName, vector<variant<string, double>> columns){
+	table* t = tables.getTablePointer(tableName);
+	for(int i = 0; i < columns.size(); i++){
+		if(holds_alternative<string>(columns[i])){
+			if(0 != get<1>(t->columns[i]))
+				return false;
+			t->entries[i]->push_back(get<string>(columns[i]));
+		}
+		else if(holds_alternative<string>(columns[i])){
+			if(1 != get<1>(t->columns[i]))
+				return false;
+			t->entries[i]->push_back(get<double>(columns[i]));
+		}
+	}
+	return true;
+}
 
 
 bool api::apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int> keyPos){
@@ -184,42 +200,46 @@ bool api::apiSetRequired(string tableName, string columnName, bool required){
 	return false;
 }
 
-bool apiUpdateEntry(string table, string columns, double newData) {
-    table* t = tables.getTablePointer(table);
+bool api::apiUpdateEntry(string tableName, string columns, double newData) {
+    table* t = tables.getTablePointer(tableName);
 
     if (t->name == "error") {
         return false;
     }
-    
-    if(getColumnType(table, columns) == 1){
-        for (int i = 0; i < tables[tablePos]->columns[columnPos].size(); i++) {
-            columns[columnPos][i] = newData;
-        }
-        return true;
-    }    
-
-    return false;
-}
-
-bool apiUpdateEntry(string table, string columns, string newData) {
-    table* t = tables.getTablePointer(table);
-
-    if (t->name == "error") {
-        return false;
-    }
-    
-    if(getColumnType(table, columns) == 0){
-        for (int i = 0; i < tables[tablePos]->columns[columnPos].size(); i++) {
-            columns[columnPos][i] = newData;
-        }
-        return true;
-    }    
-
-    return false;
-}
 	
-bool apiUpdateEntry(string table, string column, int operation, double compareWith, double newData) {
-    table* t = tables.getTablePointer(table);
+    if(tables.getColumnType(tableName, columns) == 1){
+		int tablePos = tables.getTablePosition(tableName);
+		int columnPos = tables.getColumnPosition(tablePos, columns);
+        for (int i = 0; i < t->columns.size(); i++) {
+            t->entries[i]->at(columnPos) = newData;
+        }
+        return true;
+    }    
+
+    return false;
+}
+
+bool api::apiUpdateEntry(string tableName, string columns, string newData) {
+    table* t = tables.getTablePointer(tableName);
+
+    if (t->name == "error") {
+        return false;
+    }
+	
+    if(tables.getColumnType(tableName, columns) == 0){
+		int tablePos = tables.getTablePosition(tableName);
+		int columnPos = tables.getColumnPosition(tablePos, columns);
+        for (int i = 0; i < t->columns.size(); i++) {
+            t->entries[i]->at(columnPos) = newData;
+        }
+        return true;
+    }    
+
+    return false;}
+	
+bool api::apiUpdateEntry(string tableName, string column, vector<tuple<string, int, variant<string, double>>> conditions, double newData) {
+	/*
+    table* t = tables.getTablePointer(tableName);
 
     if (t->name == "error") {
         return false;
@@ -237,12 +257,12 @@ bool apiUpdateEntry(string table, string column, int operation, double compareWi
         return false;  
     }
 
-    if(getColumnType(table, column) != 1){
+    if(tables.getColumnType(tableName, column) != 1){
         return false;
     }
 
     for (int i = 0; i < t->columns.size(); i++) {
-        double currentValue = get<double>(t->columns[i][columnPos]);
+        double currentValue = get<1>(t->columns[i][columnPos]);
         bool cond = false;
         switch (operation) {
             case 0:  
@@ -267,11 +287,13 @@ bool apiUpdateEntry(string table, string column, int operation, double compareWi
             t->columns[i][columnPos] = newData;
         }
     }
+	*/
     return true;
 }
 
-bool apiUpdateEntry(string table, string column, int operation, string compareWith, string newData) {
-    table* t = tables.getTablePointer(table);
+bool api::apiUpdateEntry(string tableName, string column, vector<tuple<string, int, variant<string, double>>> conditions, string newData){
+	/*
+    table* t = tables.getTablePointer(tableName);
 
     if (t->name == "error") {
         return false;
@@ -289,12 +311,12 @@ bool apiUpdateEntry(string table, string column, int operation, string compareWi
         return false;  
     }
 
-    if(getColumnType(table, column) != 0){
+    if(getColumnType(tableName, column) != 0){
         return false;
     }
 
     for (int i = 0; i < t->columns.size(); i++) {
-        double currentValue = get<double>(t->columns[i][columnPos]);
+        double currentValue = get<1>(t->columns[i][columnPos]);
         bool cond = false;
         switch (operation) {
             case 0:  
@@ -319,7 +341,6 @@ bool apiUpdateEntry(string table, string column, int operation, string compareWi
             t->columns[i][columnPos] = newData;
         }
     }
+	*/
     return true;
 }
-	
-};

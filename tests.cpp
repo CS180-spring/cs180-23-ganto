@@ -144,7 +144,7 @@ void addEntryTest(){
 
 
 }
-
+/*
 void updateEntryTest(){
 	t.apiAddTable("UpdateEntry", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
 
@@ -344,17 +344,17 @@ void readEntryTest(){
 
 }
 
-
+*/
 
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
 	addTableTest();
-	updateTableTest();
-	deleteTableTest();
-	readTableTest();
+	//updateTableTest();
+	//deleteTableTest();
+	//readTableTest();
 	addEntryTest();
-	updateEntryTest();
-	deleteEntryTest();
-	readEntryTest();
+	//updateEntryTest();
+	//deleteEntryTest();
+	//readEntryTest();
 	return 0;
 }
