@@ -18,3 +18,11 @@ CMakeCache.txt
 Testing/Temporary/CTestCostData.txt
 Testing/Temporary/LastTest.log
 Testing/Temporary/LastTestsFailed.log
+tests.cpp
+*.exe
+GantoApi.sln
+GantoApi.vcxproj
+GantoApi.vcxproj.filters
+GantoApiTests.vcxproj
+GantoApiTests.vcxproj.filters
+googletest
