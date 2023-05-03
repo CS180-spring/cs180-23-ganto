@@ -65,47 +65,84 @@ void updateTableTest(){
 
 void deleteTableTest(){
 	cout << "Delete Table Tests" << endl;
-	vector<tuple<string, int>> columns = {{"name", 0}, {"age", 1}, {"location", 0}};
-	vector<int> keys = {0};
-	vector<int> requiredPos;
-	cout << "\tBasic Test:\t\t";
-	if(true == t.apiRemoveTable("test"))
-		cout << "Success" << endl;
-	else
-		cout << "Failed" << endl;
-	/*
-	cout << "\tTableUsedAsForeignKey:\t\t";
-	if(false == t.apiAddTable("People", columns, keys))
+	t.apiAddTable("DeleteTable", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
+	t.apiAddTable("ForeignTable", {{"String", 0}, {"Third Thing", 0}}, {}, {{"DeleteTable", "Third Thing"}});
+	
+	cout << "\tTableUsedAsForeignKey:\t";
+	if(false == t.apiRemoveTable("DeleteTable"))
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
-	cout << "\tTablePosUpdated:\t\t";
-	if(false == t.apiAddTable("People", columns, keys))
+
+	cout << "\tTableWithForeignKey\t";
+	if(true == t.apiRemoveTable("ForeignTable") && true == t.apiReadTable("ForeignTable", {}).empty())
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
-	*/
+
+	cout << "\tForeignTableRemoved:\t";
+	if(true == t.apiRemoveTable("DeleteTable"))
+		cout << "Success" << endl;
+	else
+		cout << "Failed" << endl;
+	
 }
 
 void readTableTest(){
 	cout << "Read Table Tests" << endl;
 
-	vector<tuple<string, int>> columns = {{"name", 0}, {"age", 1}, {"location", 0}};
-	vector<int> keys = {0};
-	vector<int> requiredPos;
-	t.apiAddTable("test", columns, keys);
+	t.apiAddTable("ReadTable", {{"name", 0}, {"age", 1}, {"location", 0}}, {0});
+	vector<tuple<string, int, string, bool, bool>> returned;
 
-	vector<string> columnChoice = {"column1", "column2"};
-	cout << "\tTableDoesNotExist:\t";
-	if(get<0>(t.apiReadTable("nonexistentTable", columnChoice)).empty() && get<1>(t.apiReadTable("nonexistentTable", columnChoice)).empty())
+	cout << "\tValidTwoColumns:\t";
+	returned = t.apiReadTable("ReadTable", {"name", "location"});
+	bool success = true;
+	if(true == returned.empty())
+		success = false;
+	else if(get<0>(returned[0]) != "name"){
+		success = false;
+	}
+	else if(get<1>(returned[0]) != 0){
+		success = false;
+	}
+	else if(get<2>(returned[0]) != ""){
+		success = false;
+	}
+	else if(get<3>(returned[0]) != true){
+		success = false;
+	}
+	else if(get<4>(returned[0]) != true){
+		success = false;
+	}
+	else if(get<0>(returned[1]) != "location"){
+		success = false;
+	}
+	else if(get<1>(returned[1]) != 0){
+		success = false;
+	}
+	else if(get<2>(returned[1]) != ""){
+		success = false;
+	}
+	else if(get<3>(returned[1]) != false){
+		success = false;
+	}
+	else if(get<4>(returned[1]) != false){
+		success = false;
+	}
+	if(true == success)
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
-	columns = {make_tuple("Name", 0), make_tuple("Age", 1)};
+	cout << "\tTableDoesNotExist:\t";
+	if(true == t.apiReadTable("nonexistentTable", {"column1", "column2"}).empty())
+		cout << "Success" << endl;
+	else
+		cout << "Failed" << endl;
+
 	cout << "\tColumnsDoNotExist:\t";
-	if(false == t.apiAddTable("People", columns, keys))
+	if(true == t.apiReadTable("ReadTable", {"nonexistentColumn"}).empty())
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
