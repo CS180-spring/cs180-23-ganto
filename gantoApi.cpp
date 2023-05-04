@@ -40,7 +40,8 @@ class api{
 		//Read Entry
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns);
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions);
-
+                //Add Index
+	bool apiAddIndex(string tableName, string columnName);
 };
 
 bool api::isRequired(table* workingTable, string column){
@@ -556,4 +557,47 @@ vector<vector<variant<string, double>>> api::apiReadEntry(string tableName, vect
 	}
     return result;
 }
+
+bool api::apiAddIndex(string tableName, string columnName){
+    // Find the table with the given tableName
+    table* workingTable = tables.getTable(tableName);
+    if (workingTable == nullptr) {
+        return false;  // table not found
+    }
+
+    // Find the column with the given columnName in the table
+    int columnPos = -1;
+    for (int i = 0; i < workingTable->columns.size(); i++) {
+        if (get<0>(workingTable->columns[i]) == columnName) {
+            columnPos = i;
+            break;
+        }
+    }
+    if (columnPos == -1) {
+        return false;  // column not found
+    }
+
+    // Check if an index already exists for the column
+    for (int i = 0; i < workingTable->indexes.size(); i++) {
+        if (get<0>(workingTable->indexes[i]) == columnName) {
+            return false;  // index already exists
+        }
+    }
+
+    // Sort the entries in the column
+    sort(workingTable->entries.begin(), workingTable->entries.end(),
+         [columnPos](const vector<variant<string, double>>* a, const vector<variant<string, double>>* b) {
+             return a->at(columnPos) < b->at(columnPos);
+         });
+
+    // Store the positions of the entries in the indexes vector
+    vector<int> indexPositions;
+    for (int i = 0; i < workingTable->entries.size(); i++) {
+        indexPositions.push_back(i);
+    }
+    workingTable->indexes.push_back(make_tuple(columnName, indexPositions));
+
+    return true;
+}
+
 
