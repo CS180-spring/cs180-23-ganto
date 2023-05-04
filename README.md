@@ -24,6 +24,3 @@ The aim of GantoDB is to create a document data store backend which is capable o
 - Feature 6: Create and remove indexes
 - Feature 7: Can do above through api calls
 - Feature 8: GUI for easy edit access
-
-## Burndown Chart as of week 4
-![week4180burndownchart](https://user-images.githubusercontent.com/91393807/235014259-89b0d711-8da3-4713-b2c8-d27a40451073.JPG)
