@@ -15,7 +15,7 @@ class table{
 		vector<string> required;				//tracks required column name
 		vector<tuple<string, int>> foreign;		//Tracks the columns used as foreign keys by other tables {columnName, # of tables using the column}
 
-		vector<tuple<int, int>> indexes;	//stores position of entries sorted for a column tuple<column, position>
+		vector<tuple<string, vector<int>>> indexes;	//stores position of entries sorted for a column tuple<column, position>
 
 		vector<vector<variant<string, double>>*> entries;	//Stores actual data, pointer allows non-contiguous data storage
 
