@@ -392,6 +392,42 @@ void readEntryTest(){
 
 }
 
+void apiAddIndexTest(){
+	t.apiAddTable("IndexTest", {{"name", 0}, {"age", 1}, {"location", 0}}, {0});
+	vector<vector<variant<string, double>>> entries;
+	entries.push_back({{"entry1", 10.0, "#1"}});
+    	entries.push_back({{"entry2", 20.0, "#2"}});
+    	entries.push_back({{"entry3", 10.3, "#3"}});
+    	entries.push_back({{"entry4", 14.0, "#4"}});
+    	entries.push_back({{"entry5", 55.0, "#5"}});
+    	entries.push_back({{"entry6", 66.6, "#6"}});
+    	for(int i = 0; i < entries.size(); i++){
+        	t.apiAddEntry("IndexTest", entries[i]);
+    	}
+	cout << "\tBasic Test:\t\t";
+	if (true == t.apiAddIndex("IndexTest", "location"))
+    		cout << "Success" << endl;
+	else
+    		cout << "Failed" << endl;
+	cout << "\tInvalidTable:\t\t";
+	if (false == t.apiAddIndex("NonExistentTable", "location"))
+    		cout << "Success" << endl;
+	else
+    		cout << "Failed" << endl;
+
+	cout << "\tInvalidColumn:\t\t";
+	if (false == t.apiAddIndex("IndexTest", "nonExistentColumn"))
+    		cout << "Success" << endl;
+	else
+    		cout << "Failed" << endl;
+
+	cout << "\tDuplicateIndex:\t\t";
+	if (false == t.apiAddIndex("IndexTest", "location"))
+    		cout << "Success" << endl;
+	else
+    		cout << "Failed" << endl;
+}
+
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
 	addTableTest();
@@ -402,5 +438,6 @@ int main(){
 	updateEntryTest();
 	deleteEntryTest();
 	readEntryTest();
+	apiAddIndexTest()
 	return 0;
 }
