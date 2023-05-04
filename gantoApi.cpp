@@ -5,6 +5,7 @@ class api{
 	vector<int> getAcceptedEntries(table workingTable, vector<tuple<string, int, variant<string, double>>> conditions);
 	bool compare(variant<string, double> left, int op, variant<string, double> right);	
 	bool keyUsed(table* workingTable, int columnPos, variant<string, double> data);
+	bool isRequired(table* workingTable, string column);
 
 	public:
 	api(){ tables = tableList(); }
@@ -18,7 +19,7 @@ class api{
 		//Remove Table
 	bool apiRemoveTable(string tableName);
 		//Read Table
-	tuple<vector<string>, vector<vector<int>>> apiReadTable(string tableName, vector<string> columns);
+	vector<tuple<string, int, string, bool, bool>> apiReadTable(string tableName, vector<string> columns);
 		//Update Table
 	bool apiAddColumn(string tableName, vector<tuple<string, int>> columnNames);
 	bool apiRemoveColumn(string tableName, vector<string> columnNames);
@@ -41,6 +42,14 @@ class api{
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions);
 
 };
+
+bool api::isRequired(table* workingTable, string column){
+	for(int i = 0; i < workingTable->required.size(); i++){
+		if(column == workingTable->required[i])
+			return true;
+	}
+	return false;
+}
 
 bool api::apiRemoveEntry(string tableName, vector<tuple<string, int, variant<string, double>>> conditions){
 	return apiRemoveEntry(tableName, "", conditions);
@@ -121,6 +130,8 @@ bool api::apiAddEntry(string tableName, vector<variant<string, double>> columns)
 		if(holds_alternative<string>(columns[i])){
 			if(0 != get<1>(t->columns[i]))
 				return false;
+			if(get<string>(columns[i]) == "" && true == isRequired(t, get<0>(t->columns[i])))	//Attempting to put "" into required column
+				return false;
 			colVal = get<string>(columns[i]);
 		}
 		else if(holds_alternative<double>(columns[i])){
@@ -168,25 +179,16 @@ bool api::apiAddTable(string tableName, vector<tuple<string, int>> columns, vect
 	if("error" != tmp.name)	//Name already in use
 		return false;
 
-	int end = tables.size();
-	/*
-	for(int i = 0; i < foreignPos.size(); i++){
-		if( get<0>(foreignPos[i]) || end < get<0>(foreignPos[i]))
-			return false;
-		if(0 < get<1>(foreignPos[i]) || get<1>(foreignPos[i]) > tables.getTable(get<0>(foreignPos[i])).columns.size())
-			return false;
-	}
-	*/
-
-
 	for(int i = 0; i < localKeys.size(); i++){
 		if(0 > localKeys[i] || columns.size() <= localKeys[i])		//Check key column(s) point to actual columns
 			return false;
 	}
-
+	vector<string> tmpRequired;
 	for(int i = 0; i < requiredPos.size(); i++){
 		if(0 > requiredPos[i] || columns.size() <= requiredPos[i])		//Check required column(s) point to actual columns
 			return false;
+		else
+			tmpRequired.push_back(get<0>(columns[i]));
 	}
 	for(int i = 0; i < columns.size(); i++){						//Check for repeated column names O(n!) runtime
 		for(int j = 0; j < i; j++){
@@ -195,16 +197,56 @@ bool api::apiAddTable(string tableName, vector<tuple<string, int>> columns, vect
 		}
 	}
 
-	table *newTable = new table(tableName);
-	newTable->columns = columns;
+	int ran;	//ran will be checked against later
+	for(ran = 0; ran < foreignPos.size(); ran++){
+		bool found = false;
+		for(int j = 0; j < columns.size(); j++){
+			if(get<1>(foreignPos[ran]) == get<0>(columns[j])){
+				found = true;
+				break;
+			}
+		}
+		if(false == found)
+			break;
+		
+		if(false == tables.addForeignKey(get<0>(foreignPos[ran]), get<1>(foreignPos[ran])))
+			break;
+	}
+
+	if(ran < foreignPos.size()){		//Undoing addForeignKeys that ran before failure
+		for(int i = 0; i < ran; i++){
+			tables.removeForeignKey(get<0>(foreignPos[i]), get<1>(foreignPos[i]));
+		}
+		return false;
+	}
+
 	vector<tuple<string, string>> tmpKeys;
 	for(int i = 0; i < localKeys.size(); i++){
 		tmpKeys.push_back({"", get<0>(columns[localKeys[i]])});
 	}
+	for(int i = 0; i < foreignPos.size(); i++){
+		tmpKeys.push_back(foreignPos[i]);
+	}
+
+	for(int i = 0; i < tmpKeys.size(); i++){			//Makes key columns required columns
+		bool found = false;
+		for(int j = 0; j < requiredPos.size(); j++){
+			if(get<1>(tmpKeys[i]) == tmpRequired[j]){
+				found = true;
+				break;
+			}
+		}
+		if(false == found){
+			tmpRequired.push_back(get<1>(tmpKeys[i]));
+		}
+	}
+
+	table *newTable = new table(tableName);
+	newTable->columns = columns;
 	newTable->keys = tmpKeys;
+	newTable->required = tmpRequired;
 
 	tables.addTable(newTable);
-	tables.makeForeign(foreignPos, tableName);	//Marks columns as having dependants
 
 	return true;
 }
@@ -213,26 +255,54 @@ bool api::apiRemoveTable(string table){
 	return tables.removeTable(table);
 }
 
-tuple<vector<string>, vector<vector<int>>> api::apiReadTable(string tableName, vector<string> columns){
+//returns {columnName, columnType, ForeignKeyTableName or "", key, columnRequired}
+vector<tuple<string, int, string, bool, bool>> api::apiReadTable(string tableName, vector<string> columns){
 	// Get the table object
 	table t = tables.getTable(tableName);
+
+	vector<tuple<string, int, string, bool, bool>> result;
+
 	// Check if the table exists
 	if (t.name == "error") {
-	    return {};  // Return an empty vector if the table does not exist
+	    return result;  // Return an empty vector if the table does not exist
 	}
-	vector<int> tmpInt;
-	vector<string> tmpString;
-	tmpString.push_back(t.name);
-	for(int i = 0; i < t.columns.size(); i++){
-		tmpString.push_back(get<0>(t.columns[i]));
-		tmpInt.push_back(get<1>(t.columns[i]));
-	}
-	vector<vector<int>> comboInt;
-	comboInt.push_back(tmpInt);
-	//comboInt.push_back(t.keys);
-	//comboInt.push_back(t.required);
+	
+	bool runAll = false;
+	if(0 == columns.size())
+		runAll = true;
 
-	return {tmpString, comboInt};
+	for(int colPos = 0; colPos < columns.size(); colPos++){
+		bool found = false;
+		for(int i = 0; i < t.columns.size(); i++){
+			if(get<0>(t.columns[i]) == columns[colPos]){
+				bool key = false;
+				string foreign = "";
+				bool required = false;
+				for(int j = 0; j < t.keys.size(); j++){
+					if(get<1>(t.keys[j]) == columns[colPos]){
+						key = true;
+						foreign = get<0>(t.keys[j]);
+						break;
+					}
+				}
+				for(int j = 0; j < t.required.size(); j++){
+					if(t.required[j] == columns[colPos]){
+						required = true;
+						break;
+					}
+				}
+				found = true;
+				result.push_back({get<0>(t.columns[i]), get<1>(t.columns[i]), foreign, key, required});
+				break;
+			}
+		}
+		if(false == found){
+			result.clear();
+			return result;		//if it gets here the column was not found
+		}
+	}
+
+	return result;
 }
 
 bool api::apiAddColumn(string tableName, vector<tuple<string, int>> columnNames){
