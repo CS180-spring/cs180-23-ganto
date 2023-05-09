@@ -21,7 +21,51 @@ class tableList{
 		vector<vector<string>> getDependants(string tableName);
 		int getColumnType(string tableName, string columnName);
 		int getColumnPosition(string tableName, string columnName);
+		bool addForeignKey(string tableName, string columnName);
+		bool removeForeignKey(string tableName, string columnName);
+		int isForeign(table* workingTable, string columnName);
 };
+
+int tableList::isForeign(table* workingTable, string columnName){
+	for(int i = 0; i < workingTable->foreign.size(); i++){
+		if(columnName == get<0>(workingTable->foreign[i]))
+			return i;
+	}
+	return -1;
+}
+
+bool tableList::addForeignKey(string tableName, string columnName){
+	table* t = getTablePointer(tableName);
+	if(nullptr == t)
+		return false;
+
+	int pos = isForeign(t, columnName);
+	if(-1 != pos){
+		t->foreign[pos] = {columnName, get<1>(t->foreign[pos]) + 1};	//Increment the columnUsed counter by 1
+	}
+	else{
+		t->foreign.push_back({columnName, 1});
+	}
+	return true;
+}
+
+bool tableList::removeForeignKey(string tableName, string columnName){
+	table* t = getTablePointer(tableName);
+	if(nullptr == t)
+		return false;
+	
+	int pos = isForeign(t, columnName);
+	if(-1 != pos){
+		int size = get<1>(t->foreign[pos]);
+		if(1 == size){
+			t->foreign.erase(t->foreign.begin() + pos);
+		}
+		else{
+			t->foreign[pos] = {columnName, pos - 1};
+		}
+	}
+	return true;
+}
 
 int tableList::getColumnPosition(int tablePos, string name){
 	for(int i = 0; i < tables[tablePos]->columns.size(); i++){
@@ -45,46 +89,6 @@ int tableList::getColumnType(string tableName, string columnName){
 		return -1;
 
 	return get<1>(tables[tablePos]->columns[columnPos]);
-}
-
-
-
-vector<vector<string>> tableList::getDependants(string tableName){
-	int tablePos = getTablePosition(tableName);
-	if(-1 != tablePos){
-		return tables[tablePos]->dependants;
-	}
-	return {};
-}
-
-void tableList::makeForeign(vector<tuple<string, string>> keys, string caller){
-	for(int i = 0; i < keys.size(); i++){		//Loops through keys
-		string table = get<0>(keys[i]);
-		string column = get<1>(keys[i]);
-		int tablePos = getTablePosition(table);
-		if(-1 == tablePos)
-			return;
-		bool tableFound = false;
-		for(int j = 0; j < tables[tablePos]->dependants.size(); j++){	//Loops through the chosen table's dependant tables
-			if(0 < tables[tablePos]->dependants[j].size() && tables[tablePos]->dependants[j][0] == table){
-				tableFound = true;
-				bool columnFound = false;
-				for(int k = 0; k < tables[tablePos]->dependants[j].size(); k++){	//Loops through the dependant columns in the selected dependant  table
-					if(column == tables[tablePos]->dependants[j][k]; k++){
-						columnFound = true;
-						break;
-					}
-				}
-				if(false == columnFound){
-					tables[tablePos]->dependants[j].push_back({column});		//Append column to dependants
-				}
-				break;
-			}
-		}
-		if(false == tableFound){
-			tables[tablePos]->dependants.push_back({table, column});		//Append table and column to dependants
-		}
-	}
 }
 
 int tableList::size(){
@@ -128,6 +132,13 @@ vector<table*> tableList::getAllTables(){
 bool tableList::removeTable(string tableName){
 	int tmpPos = getTablePosition(tableName);
     if(-1 != tmpPos){
+		if(0 != tables[tmpPos]->foreign.size())		//Check if table is used for foreign keys
+			return false;
+		for(int i = 0; i < tables[tmpPos]->keys.size(); i++){
+			if("" != get<0>(tables[tmpPos]->keys[i])){
+				removeForeignKey(get<0>(tables[tmpPos]->keys[i]), get<1>(tables[tmpPos]->keys[i]));
+			}
+		}
         for(int i = 0; i < tables[tmpPos]->entries.size(); ++i){
             delete tables[tmpPos]->entries[i];
         }
