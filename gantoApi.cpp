@@ -560,10 +560,11 @@ vector<vector<variant<string, double>>> api::apiReadEntry(string tableName, vect
 
 bool api::apiAddIndex(string tableName, string columnName){
     // Find the table with the given tableName
-    table* workingTable = tables.getTable(tableName);
+    table* workingTable = tables.getTablePointer(tableName);
     if (workingTable == nullptr) {
         return false;  // table not found
     }
+
 
     // Find the column with the given columnName in the table
     int columnPos = -1;
@@ -573,6 +574,7 @@ bool api::apiAddIndex(string tableName, string columnName){
             break;
         }
     }
+
     if (columnPos == -1) {
         return false;  // column not found
     }
