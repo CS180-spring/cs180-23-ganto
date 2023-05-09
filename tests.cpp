@@ -404,6 +404,9 @@ void apiAddIndexTest(){
     	for(int i = 0; i < entries.size(); i++){
         	t.apiAddEntry("IndexTest", entries[i]);
     	}
+	
+	cout << "Add Index Text" << endl;
+	
 	cout << "\tBasic Test:\t\t";
 	if (true == t.apiAddIndex("IndexTest", "location"))
     		cout << "Success" << endl;
@@ -438,6 +441,6 @@ int main(){
 	updateEntryTest();
 	deleteEntryTest();
 	readEntryTest();
-	apiAddIndexTest()
+	apiAddIndexTest();
 	return 0;
 }
