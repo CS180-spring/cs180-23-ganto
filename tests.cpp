@@ -431,16 +431,156 @@ void apiAddIndexTest(){
     		cout << "Failed" << endl;
 }
 
+void readMultipleEntryTest(){
+	t.apiAddTable("ReadMultEntries", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
+	vector<vector<variant<string, double>>> returned;
+	vector<vector<variant<string, double>>> entries;
+	entries.push_back({{"entry1", 10.0, "#1"}});
+	entries.push_back({{"entry2", 20.0, "#2"}});
+	entries.push_back({{"entry3", 10.3, "#3"}});
+	entries.push_back({{"entry4", 14.0, "#4"}});
+	entries.push_back({{"entry5", 55.0, "#5"}});
+	entries.push_back({{"entry6", 66.6, "#6"}});
+	for(int i = 0; i < entries.size(); i++){
+		t.apiAddEntry("ReadMultEntries", entries[i]);
+	}
+
+	t.apiAddTable("ReadMultEntries_2", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
+	vector<vector<variant<string, double>>> entries_2;
+	entries_2.push_back({{"entry7", 200.0, "#1"}});
+	entries_2.push_back({{"entry8", 253.8, "#2"}});
+	entries_2.push_back({{"entry9", 473.09, "#3"}});
+	entries_2.push_back({{"entry10", 300.02, "#4"}});
+	entries_2.push_back({{"entry11", 60.7, "#5"}});
+	entries_2.push_back({{"entry12", 78.2, "#6"}});
+	for(int i = 0; i < entries_2.size(); i++){
+		t.apiAddEntry("ReadMultEntries_2", entries_2[i]);
+	}
+
+	cout << "Read Entry Tests" << endl;
+	
+	cout << "\tNoCondition:\t\t";
+	returned = t.apiReadEntry({"ReadMultEntries", "ReadMultEntries_2"}, {{"String", "Double", "Third Thing"},{"String", "Double", "Third Thing"}});
+	bool success = true;
+	for(int i = 0; i < entries.size(); i++){
+		if(get<0>(entries[i][0]) != get<0>(returned[i][0])){
+			success = false;
+			break;
+		}
+		else if(get<1>(entries[i][1]) != get<1>(returned[i][1])){
+			success = false;
+			break;
+		}
+		else if(get<0>(entries[i][2]) != get<0>(returned[i][2])){
+			success = false;
+			break;
+		}
+	}
+	for(int i = 0; i < entries_2.size(); i++){
+		if(get<0>(entries_2[i][0]) != get<0>(returned[i+entries.size()][0])){
+			success = false;
+			break;
+		}
+		else if(get<1>(entries_2[i][1]) != get<1>(returned[i+entries.size()][1])){
+			success = false;
+			break;
+		}
+		else if(get<0>(entries_2[i][2]) != get<0>(returned[i+entries.size()][2])){
+			success = false;
+			break;
+		}
+	}
+	if(true == success)
+		cout << "Success" << endl;
+	else
+		cout << "Failed" << endl;
+
+	cout << "\tOneCondition:\t\t";
+	returned = t.apiReadEntry({"ReadMultEntries", "ReadMultEntries_2"}, {{"String", "Double", "Third Thing"}, {"String", "Double", "Third Thing"}}, {{{"Double", 1, 10.0}}, {{"Double", 1, 10.0}}});
+	for(int i = 1; i < entries.size(); i++){
+		if(get<0>(entries[i][0]) != get<0>(returned[i-1][0])){
+			success = false;
+			break;
+		}
+		else if(get<1>(entries[i][1]) != get<1>(returned[i-1][1])){
+			success = false;
+			break;
+		}
+		else if(get<0>(entries[i][2]) != get<0>(returned[i-1][2])){
+			success = false;
+			break;
+		}
+	}
+	for(int i = 1; i < entries_2.size(); i++){
+		if(get<0>(entries_2[i][0]) != get<0>(returned[i-1+entries.size()][0])){
+			success = false;
+			break;
+		}
+		else if(get<1>(entries_2[i][1]) != get<1>(returned[i-1+entries.size()][1])){
+			success = false;
+			break;
+		}
+		else if(get<0>(entries_2[i][2]) != get<0>(returned[i-1+entries.size()][2])){
+			success = false;
+			break;
+		}
+	}
+	if(true == success)
+		cout << "Success" << endl;
+	else
+		cout << "Failed" << endl;
+
+	cout << "\tMultipleConditions:\t";
+	returned = t.apiReadEntry("ReadMultEntries", {"String", "Double", "Third Thing"}, {{"Double", 1, 10.0}, {"String", 0, "entry3"}});
+	if(get<0>(entries[2][0]) != get<0>(returned[0][0])){
+		success = false;
+	}
+	else if(get<1>(entries[2][1]) != get<1>(returned[0][1])){
+		success = false;
+	}
+	else if(get<0>(entries[2][2]) != get<0>(returned[0][2])){
+		success = false;
+	}
+
+	if(true == success)
+		cout << "Success" << endl;
+	else
+		cout << "Failed" << endl;
+
+	cout << "\tNoResults:\t\t";
+	returned = t.apiReadEntry("ReadMultEntries", {"String", "Double", "Third Thing"}, {{"Double", 3, 10.0}, {"String", 0, "entry3"}});
+	if(0 == returned.size())
+		cout << "Success" << endl;
+	else
+		cout << "Failed" << endl;
+		
+	cout << "\tInvalidOperator:\t";
+	returned = t.apiReadEntry("ReadMultEntries", {"String", "Double", "Third Thing"}, {{"String", 3, "entry1"}});
+	if(0 == returned.size())
+		cout << "Success" << endl;
+	else
+		cout << "Failed" << endl;
+
+	cout << "\tWrongType:\t\t";
+	returned = t.apiReadEntry("ReadMultEntries", {"String", "Double", "Third Thing"}, {{"Double", 3, "entry1"}});
+	if(0 == returned.size())
+		cout << "Success" << endl;
+	else
+		cout << "Failed" << endl;
+
+}
+
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
-	addTableTest();
-	updateTableTest();
-	deleteTableTest();
-	readTableTest();
-	addEntryTest();
-	updateEntryTest();
-	deleteEntryTest();
-	readEntryTest();
-	apiAddIndexTest();
+	//addTableTest();
+	//updateTableTest();
+	//deleteTableTest();
+	//readTableTest();
+	//addEntryTest();
+	//updateEntryTest();
+	//deleteEntryTest();
+	//readEntryTest();
+	//apiAddIndexTest();
+	readMultipleEntryTest();
 	return 0;
 }

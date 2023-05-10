@@ -42,7 +42,35 @@ class api{
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions);
                 //Add Index
 	bool apiAddIndex(string tableName, string columnName);
+	vector<vector<variant<string, double>>> apiReadEntry(vector <string> table, vector<vector<string>> displayColumns);
+	vector<vector<variant<string, double>>> apiReadEntry(vector <string> table, vector<vector<string>> displayColumns, vector<vector<tuple<string, int, variant<string, double>>>> conditions);
 };
+
+vector<vector<variant<string, double>>> api::apiReadEntry(vector <string> table, vector<vector<string>> displayColumns){
+	return apiReadEntry(table, displayColumns, {});
+}
+
+vector<vector<variant<string, double>>> api::apiReadEntry(vector <string> table, vector<vector<string>> displayColumns, vector<vector<tuple<string, int, variant<string, double>>>> conditions){
+	if(table.size() != displayColumns.size()){
+		return {};
+	}
+	bool ans = false;
+	if(table.size() <= conditions.size()){
+		ans = true;
+	}
+	vector<vector<variant<string, double>>> returnEntries, temp;
+	for(int i = 0; i < table.size(); ++i){
+		vector<tuple<string, int, variant<string, double>>> condTemp = {};
+		if(ans == true){
+			condTemp = conditions[i];	
+		}
+		temp = apiReadEntry(table[i], displayColumns[i], condTemp);
+		for(int j = 0; j < temp.size(); ++j){
+			returnEntries.push_back(temp[j]);
+		}
+	}
+	return returnEntries;
+}
 
 bool api::isRequired(table* workingTable, string column){
 	for(int i = 0; i < workingTable->required.size(); i++){
