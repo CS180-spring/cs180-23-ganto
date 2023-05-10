@@ -1,4 +1,6 @@
 #include "tableList.cpp"
+
+
 class api{
 	private:
 	tableList tables;
@@ -42,7 +44,23 @@ class api{
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions);
                 //Add Index
 	bool apiAddIndex(string tableName, string columnName);
+
+	bool apiSaveToFile();
+	bool apiSaveToFile(string filename);
+	bool apiLoadFile(string filename);
 };
+
+	bool api::apiLoadFile(string filename){
+		return tables.loadTables(filename);
+	}
+
+	bool api::apiSaveToFile(){
+		return apiSaveToFile("tmpName.json");
+	}
+
+	bool api::apiSaveToFile(string filename){
+		return tables.writeTables(filename);
+	}
 
 bool api::isRequired(table* workingTable, string column){
 	for(int i = 0; i < workingTable->required.size(); i++){

@@ -21,4 +21,12 @@ class table{
 		vector<vector<variant<string, double>>*> entries;	//Stores actual data, pointer allows non-contiguous data storage
 
 		table(string name){this->name = name;};
+		//~table();
 };
+
+/*table::~table(){
+	for(int i = 0; i < entries.size(); i++){
+		delete entries[i];
+	}
+}
+*/
