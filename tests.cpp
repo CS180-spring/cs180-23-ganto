@@ -465,6 +465,14 @@ void writeTablesTest(){
 		cout << "Failed" << endl;
 }
 
+void largeTableTest(){
+	t.apiLoadFile("LargeTable.json");
+	vector<vector<variant<string, double>>> returned;
+
+	returned = t.apiReadEntry("LargeTable", {"Number"}, {{"Number", 1, 50.0}});
+	cout << returned.size();
+}
+
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
 	//addTableTest();
@@ -476,6 +484,7 @@ int main(){
 	//deleteEntryTest();
 	//readEntryTest();
 	//apiAddIndexTest();
-	writeTablesTest();
+	//writeTablesTest();
+	largeTableTest();
 	return 0;
 }
