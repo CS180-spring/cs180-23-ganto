@@ -459,7 +459,7 @@ void readMultipleEntryTest(){
 		t.apiAddEntry("ReadMultEntries_2", entries_2[i]);
 	}
 
-	cout << "Read Entry Tests" << endl;
+	cout << "Read Multiple Entry Tests" << endl;
 	
 	cout << "\tNoCondition:\t\t";
 	returned = t.apiReadEntry({"ReadMultEntries", "ReadMultEntries_2"}, {{"String", "Double", "Third Thing"},{"String", "Double", "Third Thing"}});
@@ -605,15 +605,15 @@ void readMultipleEntryTest(){
 
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
-	//addTableTest();
-	//updateTableTest();
-	//deleteTableTest();
-	//readTableTest();
-	//addEntryTest();
-	//updateEntryTest();
-	//deleteEntryTest();
-	//readEntryTest();
-	//apiAddIndexTest();
+	addTableTest();
+	updateTableTest();
+	deleteTableTest();
+	readTableTest();
+	addEntryTest();
+	updateEntryTest();
+	deleteEntryTest();
+	readEntryTest();
+	apiAddIndexTest();
 	readMultipleEntryTest();
 	return 0;
 }
