@@ -1,5 +1,7 @@
 #include "gantoApi.cpp"
 #include <iostream>
+#include <stdio.h>
+#include <assert.h>
 api t = api();
 bool integrationTest = false;	//Use this to turn on/off integration tests
 
@@ -451,7 +453,7 @@ void readMultipleEntryTest(){
 	entries_2.push_back({{"entry8", 253.8, "#2"}});
 	entries_2.push_back({{"entry9", 473.09, "#3"}});
 	entries_2.push_back({{"entry10", 300.02, "#4"}});
-	entries_2.push_back({{"entry11", 60.7, "#5"}});
+	entries_2.push_back({{"entry11", 6.7, "#5"}});
 	entries_2.push_back({{"entry12", 78.2, "#6"}});
 	for(int i = 0; i < entries_2.size(); i++){
 		t.apiAddEntry("ReadMultEntries_2", entries_2[i]);
@@ -496,40 +498,63 @@ void readMultipleEntryTest(){
 		cout << "Failed" << endl;
 
 	cout << "\tOneCondition:\t\t";
-	returned = t.apiReadEntry({"ReadMultEntries", "ReadMultEntries_2"}, {{"String", "Double", "Third Thing"}, {"String", "Double", "Third Thing"}}, {{{"Double", 1, 10.0}}, {{"Double", 1, 10.0}}});
-	for(int i = 1; i < entries.size(); i++){
-		if(get<0>(entries[i][0]) != get<0>(returned[i-1][0])){
-			success = false;
-			break;
-		}
-		else if(get<1>(entries[i][1]) != get<1>(returned[i-1][1])){
-			success = false;
-			break;
-		}
-		else if(get<0>(entries[i][2]) != get<0>(returned[i-1][2])){
-			success = false;
-			break;
-		}
+	vector<vector<string>> displayColumns = {{"String", "Double", "Third Thing"}, {"String", "Double", "Third Thing"}};
+    vector<vector<tuple<string, int, variant<string, double>>>> conditions = {{{"String", 0, "entry1"}}, {{"Double", 1, 10.0}}};
+    returned = t.apiReadEntry({"ReadMultEntries", "ReadMultEntries_2"}, displayColumns, conditions);
+	if(get<string>(entries[0][0]) != get<string>(returned[0][0])){
+		success = false;
 	}
-	for(int i = 1; i < entries_2.size(); i++){
-		if(get<0>(entries_2[i][0]) != get<0>(returned[i-1+entries.size()][0])){
-			success = false;
-			break;
-		}
-		else if(get<1>(entries_2[i][1]) != get<1>(returned[i-1+entries.size()][1])){
-			success = false;
-			break;
-		}
-		else if(get<0>(entries_2[i][2]) != get<0>(returned[i-1+entries.size()][2])){
-			success = false;
-			break;
-		}
+	if(get<string>(entries_2[0][0]) != get<string>(returned[1][0])){
+		success = false; 
+	}
+	if(get<double>(entries_2[0][1]) != get<double>(returned[1][1])){
+		success = false; 
+	}
+	if(get<string>(entries_2[0][2]) != get<string>(returned[1][2])){
+		success = false; 
+	}
+	if(get<string>(entries_2[1][0]) != get<string>(returned[2][0])){
+		success = false;
+	}
+	if(get<double>(entries_2[1][1]) != get<double>(returned[2][1])){
+		success = false; 
+	}
+	if(get<string>(entries_2[1][2]) != get<string>(returned[2][2])){
+		success = false; 
+	}
+	//4th
+	if(get<string>(entries_2[2][0]) != get<string>(returned[3][0])){
+		success = false;
+	}
+	if(get<double>(entries_2[2][1]) != get<double>(returned[3][1])){
+		success = false; 
+	}
+	if(get<string>(entries_2[2][2]) != get<string>(returned[3][2])){
+		success = false; 
+	}
+	if(get<string>(entries_2[3][0]) != get<string>(returned[4][0])){
+		success = false;
+	}
+	if(get<double>(entries_2[3][1]) != get<double>(returned[4][1])){
+		success = false; 
+	}
+	if(get<string>(entries_2[3][2]) != get<string>(returned[4][2])){
+		success = false; 
+	}
+	if(get<string>(entries_2[5][0]) != get<string>(returned[5][0])){
+		success = false;
+	}
+	if(get<double>(entries_2[5][1]) != get<double>(returned[5][1])){
+		success = false; 
+	}
+	if(get<string>(entries_2[5][2]) != get<string>(returned[5][2])){
+		success = false; 
 	}
 	if(true == success)
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
-
+		
 	cout << "\tMultipleConditions:\t";
 	returned = t.apiReadEntry("ReadMultEntries", {"String", "Double", "Third Thing"}, {{"Double", 1, 10.0}, {"String", 0, "entry3"}});
 	if(get<0>(entries[2][0]) != get<0>(returned[0][0])){

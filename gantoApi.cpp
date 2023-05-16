@@ -1,4 +1,6 @@
 #include "tableList.cpp"
+#include <iostream>
+using namespace std;
 class api{
 	private:
 	tableList tables;
