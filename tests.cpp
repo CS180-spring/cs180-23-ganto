@@ -554,40 +554,48 @@ void readMultipleEntryTest(){
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
-		
-	cout << "\tMultipleConditions:\t";
-	returned = t.apiReadEntry("ReadMultEntries", {"String", "Double", "Third Thing"}, {{"Double", 1, 10.0}, {"String", 0, "entry3"}});
-	if(get<0>(entries[2][0]) != get<0>(returned[0][0])){
-		success = false;
-	}
-	else if(get<1>(entries[2][1]) != get<1>(returned[0][1])){
-		success = false;
-	}
-	else if(get<0>(entries[2][2]) != get<0>(returned[0][2])){
-		success = false;
-	}
 
+	cout << "\tMultipleConditions:\t";
+	returned = t.apiReadEntry({"ReadMultEntries","ReadMultEntries_2"}, {{"String", "Double", "Third Thing"},{"String", "Double", "Third Thing"}}, {{{"Double", 1, 10.0}, {"String", 0, "entry3"}}, {{"Double", 1, 15.2}, {"String", 0, "entry8"}}});
+	if(get<string>(entries[2][0]) != get<string>(returned[0][0])){
+		success = false;
+	}
+	else if(get<double>(entries[2][1]) != get<double>(returned[0][1])){
+		success = false;
+	}
+	else if(get<string>(entries[2][2]) != get<string>(returned[0][2])){
+		success = false;
+	}
+	if(get<string>(entries_2[1][0]) != get<string>(returned[1][0])){
+		success = false;
+	}
+	else if(get<double>(entries_2[1][1]) != get<double>(returned[1][1])){
+		success = false;
+	}
+	else if(get<string>(entries_2[1][2]) != get<string>(returned[1][2])){
+		success = false;
+	} 
 	if(true == success)
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 	cout << "\tNoResults:\t\t";
-	returned = t.apiReadEntry("ReadMultEntries", {"String", "Double", "Third Thing"}, {{"Double", 3, 10.0}, {"String", 0, "entry3"}});
+	returned = t.apiReadEntry({"ReadMultEntries","ReadMultEntries_2"}, {{"String", "Double", "Third Thing"},{"String", "Double", "Third Thing"}}, {{{"Double", 0, 9.0}, {"String", 0, "entry3"}}, {{"Double", 0, 15.2}, {"String", 0, "entry8"}}});
 	if(0 == returned.size())
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 		
 	cout << "\tInvalidOperator:\t";
-	returned = t.apiReadEntry("ReadMultEntries", {"String", "Double", "Third Thing"}, {{"String", 3, "entry1"}});
+	returned = t.apiReadEntry({"ReadMultEntries", "ReadMultEntries_2"}, {{"String", "Double", "Third Thing"}, {"String", "Double", "Third Thing"}}, {{{"String", 9, "entry1"}}, {{"String", 9, "entry7"}}});
 	if(0 == returned.size())
 		cout << "Success" << endl;
 	else
 		cout << "Failed" << endl;
 
 	cout << "\tWrongType:\t\t";
-	returned = t.apiReadEntry("ReadMultEntries", {"String", "Double", "Third Thing"}, {{"Double", 3, "entry1"}});
+	returned = t.apiReadEntry({"ReadMultEntries", "ReadMultEntries_2"}, {{"String", "Double", "Third Thing"}, {"String", "Double", "Third Thing"}}, {{{"Double", 3, "entry1"}}, {{"Double", 3, "entry8"}}});
 	if(0 == returned.size())
 		cout << "Success" << endl;
 	else
