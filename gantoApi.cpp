@@ -1,6 +1,7 @@
 #include "tableList.cpp"
 #include <iostream>
 using namespace std;
+
 class api{
 	private:
 	tableList tables;
@@ -42,36 +43,27 @@ class api{
 		//Read Entry
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns);
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions);
-                //Add Index
-	bool apiAddIndex(string tableName, string columnName);
+               
 	vector<vector<variant<string, double>>> apiReadEntry(vector <string> table, vector<vector<string>> displayColumns);
 	vector<vector<variant<string, double>>> apiReadEntry(vector <string> table, vector<vector<string>> displayColumns, vector<vector<tuple<string, int, variant<string, double>>>> conditions);
+    //Add Index
+	bool apiAddIndex(string tableName, string columnName);
+  
+	bool apiSaveToFile();
+	bool apiSaveToFile(string filename);
+	bool apiLoadFile(string filename);
 };
 
-vector<vector<variant<string, double>>> api::apiReadEntry(vector <string> table, vector<vector<string>> displayColumns){
-	return apiReadEntry(table, displayColumns, {});
+bool api::apiLoadFile(string filename){
+		return tables.loadTables(filename);
 }
 
-vector<vector<variant<string, double>>> api::apiReadEntry(vector <string> table, vector<vector<string>> displayColumns, vector<vector<tuple<string, int, variant<string, double>>>> conditions){
-	if(table.size() != displayColumns.size()){
-		return {};
-	}
-	bool ans = false;
-	if(table.size() <= conditions.size()){
-		ans = true;
-	}
-	vector<vector<variant<string, double>>> returnEntries, temp;
-	for(int i = 0; i < table.size(); ++i){
-		vector<tuple<string, int, variant<string, double>>> condTemp = {};
-		if(ans == true){
-			condTemp = conditions[i];	
-		}
-		temp = apiReadEntry(table[i], displayColumns[i], condTemp);
-		for(int j = 0; j < temp.size(); ++j){
-			returnEntries.push_back(temp[j]);
-		}
-	}
-	return returnEntries;
+bool api::apiSaveToFile(){
+		return apiSaveToFile("tmpName.json");
+}
+
+bool api::apiSaveToFile(string filename){
+		return tables.writeTables(filename);
 }
 
 bool api::isRequired(table* workingTable, string column){
@@ -124,6 +116,14 @@ bool api::apiRemoveEntry(string tableName, string column, vector<tuple<string, i
 }
 
 bool api::keyUsed(table* workingTable, int columnPos, variant<string, double> data){
+	bool keyColumn = false;
+	for(int i = 0; i < workingTable->keys.size(); i++){
+		if(get<0>(workingTable->columns[columnPos]) == get<1>(workingTable->keys[i]))
+			keyColumn = true;
+	}
+	if(false == keyColumn)	//The chosen column is not a key column
+		return false;
+
 	int type = get<1>(workingTable->columns[columnPos]);
 	string stringData;
 	double doubleData;
@@ -137,11 +137,11 @@ bool api::keyUsed(table* workingTable, int columnPos, variant<string, double> da
 	for(int i = 0; i < workingTable->entries.size(); i++){
 		switch(type){
 			case 0:
-				if(stringData == get<string>(workingTable->entries[i]->at(columnPos)))
+				if(stringData == get<string>(workingTable->entries[i]->at(columnPos)))	//String entry already exists in column
 					return true;
 				break;
 			case 1:
-				if(doubleData == get<double>(workingTable->entries[i]->at(columnPos)))
+				if(doubleData == get<double>(workingTable->entries[i]->at(columnPos)))	//String entry already exists in column
 					return true;
 				break;
 		}
@@ -158,19 +158,19 @@ bool api::apiAddEntry(string tableName, vector<variant<string, double>> columns)
 	bool valid = true;
 	for(int i = 0; i < columns.size(); i++){
 		variant<string, double> colVal;
-		if(holds_alternative<string>(columns[i])){
-			if(0 != get<1>(t->columns[i]))
+		if(holds_alternative<string>(columns[i])){	//String columns
+			if(0 != get<1>(t->columns[i]))	//Incompatable column type and column value
 				return false;
 			if(get<string>(columns[i]) == "" && true == isRequired(t, get<0>(t->columns[i])))	//Attempting to put "" into required column
 				return false;
 			colVal = get<string>(columns[i]);
 		}
-		else if(holds_alternative<double>(columns[i])){
-			if(1 != get<1>(t->columns[i]))
+		else if(holds_alternative<double>(columns[i])){	//Double columns
+			if(1 != get<1>(t->columns[i]))	//Incompatable column type and column value
 				return false;
 			colVal = get<double>(columns[i]);
 		}
-		if(false == keyUsed(t, i, colVal)){
+		if(false == keyUsed(t, i, colVal)){	//Duplicate values are not allowed in key columns
 			entry->push_back(colVal);
 		}
 		else{
@@ -420,7 +420,7 @@ vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int
 		accepted.push_back(i);
 	}
 
-	if(0 == conditions.size()){		//no conditions means apply change to all entries
+	if(0 == conditions.size()){		//no conditions means return all entries
 		return accepted;
 	}
 
@@ -441,7 +441,7 @@ vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int
 			int type = get<1>(workingTable.columns[colPos]);
 			switch(type){
 				case 0:
-					if(false == holds_alternative<string>(compareWith))
+					if(false == holds_alternative<string>(compareWith))	//Incompatable column type and comparison value
 						return {};
 					if(false == compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))){
 						accepted.erase(accepted.begin() + i);
@@ -450,7 +450,7 @@ vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int
 					}
 					break;
 				case 1:
-					if(false == holds_alternative<double>(compareWith))
+					if(false == holds_alternative<double>(compareWith))	//Incompatable column type and comparison value
 						return {};
 					if(false == compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))){
 						accepted.erase(accepted.begin() + i);
@@ -586,6 +586,32 @@ vector<vector<variant<string, double>>> api::apiReadEntry(string tableName, vect
 		result.push_back(entryResult);
 	}
     return result;
+}
+
+vector<vector<variant<string, double>>> api::apiReadEntry(vector <string> table, vector<vector<string>> displayColumns){
+	return apiReadEntry(table, displayColumns, {});
+}
+
+vector<vector<variant<string, double>>> api::apiReadEntry(vector <string> table, vector<vector<string>> displayColumns, vector<vector<tuple<string, int, variant<string, double>>>> conditions){
+	if(table.size() != displayColumns.size()){
+		return {};
+	}
+	bool ans = false;
+	if(table.size() <= conditions.size()){
+		ans = true;
+	}
+	vector<vector<variant<string, double>>> returnEntries, temp;
+	for(int i = 0; i < table.size(); ++i){
+		vector<tuple<string, int, variant<string, double>>> condTemp = {};
+		if(ans == true){
+			condTemp = conditions[i];	
+		}
+		temp = apiReadEntry(table[i], displayColumns[i], condTemp);
+		for(int j = 0; j < temp.size(); ++j){
+			returnEntries.push_back(temp[j]);
+		}
+	}
+	return returnEntries;
 }
 
 bool api::apiAddIndex(string tableName, string columnName){

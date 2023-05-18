@@ -433,6 +433,50 @@ void apiAddIndexTest(){
     		cout << "Failed" << endl;
 }
 
+
+
+void writeTablesTest(){
+	//t.apiSaveToFile();
+	t.apiLoadFile("tmpName.json");
+	cout << "\tNoCondition:\t\t";
+	vector<vector<variant<string, double>>> returned;
+	vector<vector<variant<string, double>>> entries;
+	entries.push_back({{"entry1", 10.0, "#1"}});
+	entries.push_back({{"entry2", 20.0, "#2"}});
+	entries.push_back({{"entry3", 10.3, "#3"}});
+	entries.push_back({{"entry4", 14.0, "#4"}});
+	entries.push_back({{"entry5", 55.0, "#5"}});
+	entries.push_back({{"entry6", 66.6, "#6"}});
+	returned = t.apiReadEntry("ReadEntry", {"String", "Double", "Third Thing"});
+	bool success = true;
+	for(int i = 0; i < entries.size(); i++){
+		if(get<0>(entries[i][0]) != get<0>(returned[i][0])){
+			success = false;
+			break;
+		}
+		else if(get<1>(entries[i][1]) != get<1>(returned[i][1])){
+			success = false;
+			break;
+		}
+		else if(get<0>(entries[i][2]) != get<0>(returned[i][2])){
+			success = false;
+			break;
+		}
+	}
+	if(true == success)
+		cout << "Success" << endl;
+	else
+		cout << "Failed" << endl;
+}
+
+void largeTableTest(){
+	t.apiLoadFile("LargeTable.json");
+	vector<vector<variant<string, double>>> returned;
+
+	returned = t.apiReadEntry("LargeTable", {"Number"}, {{"Number", 1, 50.0}});
+	cout << returned.size();
+}
+
 void readMultipleEntryTest(){
 	t.apiAddTable("ReadMultEntries", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
 	vector<vector<variant<string, double>>> returned;
@@ -603,8 +647,10 @@ void readMultipleEntryTest(){
 
 }
 
+
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
+
 	addTableTest();
 	updateTableTest();
 	deleteTableTest();
@@ -614,6 +660,9 @@ int main(){
 	deleteEntryTest();
 	readEntryTest();
 	apiAddIndexTest();
+  writeTablesTest();
+  largeTableTest();
 	readMultipleEntryTest();
+
 	return 0;
 }
