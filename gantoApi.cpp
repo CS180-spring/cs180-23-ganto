@@ -132,21 +132,6 @@ vector<vector<int>> api::pairEntries(vector<vector<int>> base, string baseTableN
 //																		table		cols					col		op		compareAgainst										table1	  col1			table2	col2
 vector<vector<variant<string, double>>> api::apiJoinEntry(vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns, vector<tuple<tuple<string, string>, tuple<string, string>>> join){
 	vector<string> tableNames = vector<string>();
-
-	//Get accepted entries for all columns
-//	vector<vector<int>> acceptedEntries = vector<vector<int>>();
-/*	for(int i = 0; i < columns.size(); i++){
-		string tableName = get<0>(columns[i]);
-		//Create a list of all tables in use
-		for(int j = 0; j < tableNames.size(); j++){
-			if(tableName == tableNames[j]){
-				return {};	//Repeated tables is not allowed, could fix but would run slower than just enforcing unique tables
-			}
-		}
-		tableNames.push_back({tableName, false});
-		acceptedEntries.push_back(getAcceptedEntries(tableName, get<2>(columns[i])));
-	}
-*/
 	//Setup the first join
 	//			baseTbl	tblPos	accepted	baseCol	newTbl	newCol
 	vector<tuple<string, int, vector<int>, string, string, string>> args;
@@ -282,89 +267,6 @@ vector<vector<variant<string, double>>> api::apiJoinEntry(vector<tuple<string, v
 	}
 
 	return comboTable;
-
-/*
-	vector<tuple<tuple<string, string>, vector<tuple<int, int>>>> joinedEntryPos;
-	//Join accepted entries into new table format
-	for(int i = 0; i < join.size(); i++){
-		//Get elements from join for readability
-		string tableName1 = get<0>(get<0>(join[i]));
-		string col1 = get<0>(get<1>(join[i]));
-		string tableName2 = get<1>(get<0>(join[i]));
-		string col2 = get<1>(get<1>(join[i]));
-		int type1 = tables.getColumnType(tableName1, col1);
-		int type2 = tables.getColumnType(tableName2, col2);
-
-		if(-1 == type1 || -1 == type2 || type1 != type2){	//Columns not found or incompatable types
-			return {};
-		}
-
-		//More readability declarations
-		int pos1 = tables.getColumnPosition(tableName1, col1);
-		int pos2 = tables.getColumnPosition(tableName2, col2);
-		table table1 = tables.getTable(tableName1);
-		table table2 = tables.getTable(tableName2);
-		vector<tuple<int, int>> paired;
-		vector<int>	unpaired1;
-		vector<int> unpaired2;
-		
-		//Get the entry positions to be paired
-		bool found = false;
-		for(int j = 0; j < columns.size(); j++){
-			if(tableName1 == get<0>(columns[j])){
-				found == true;
-				unpaired1 = acceptedEntries[j];	//Just get the postions that match the conditions
-				break;
-			}
-		}
-		if(false == found){	//Table1 did not have any conditions
-			for (int j = 0; j < table1.entries.size(); j++){
-				unpaired1.push_back(j);
-			}
-		}
-		found = false;
-		for(int j = 0; j < columns.size(); j++){
-			if(tableName2 == get<0>(columns[j])){
-				found == true;
-				unpaired2 = acceptedEntries[j];	//Just get the postions that match the conditions
-				break;
-			}
-		}
-		if(false == found){		//Table2 did not have any conditions
-			for (int j = 0; j < table2.entries.size(); j++){
-				unpaired2.push_back(j);
-			}
-		}
-
-		vector<tuple<int, int>>;
-		//Pairing
-		for (int j = unpaired1.size() - 1; j >= 0; j--){	//Removing from the back of a vector should be faster
-			bool matched = false;
-			for (int k = unpaired2.size() - 1; k >= 0; k--){
-				if(table1.entries[unpaired1[j]][pos1] == table2.entries[unpaired2[k]][pos2]){
-					matched = true;
-					paired.push_back({unpaired1[j], unpaired2[k]});
-				}
-			}
-			if(false == matched){
-				paired.push_back({unpaired1[j], -1});
-			}
-			unpaired1.pop_back();	//Not removing paired elements from unpaired2 because they might be matched with later elements from unpaired1
-		}
-		for (int j = 0; j < paired.size(); j++){	//Remove paired elements from unpaired2
-			for (int k = unpaired2.size() - 1; k >= 0; k--){
-				if(get<1>(paired[j]) == unpaired2[k]){
-					unpaired2.erase(unpaired2.begin() + k);
-					break;
-				}
-			}
-		}
-		for(int j = unpaired2.size() - 1; j >= 0; j--){
-			paired.push_back({-1, unpaired2[j]});	//Don't need to pop_back since unpaired is not used after this
-		}
-		joinedEntryPos.push_back({{tableName1, tableName2}, paired});
-	}
-	*/
 }
 
 bool api::apiLoadFile(string filename){
