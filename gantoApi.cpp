@@ -82,18 +82,19 @@ vector<vector<int>> api::pairEntries(vector<vector<int>> base, string baseTableN
 	table table1 = tables.getTable(tableName1);
 	table table2 = tables.getTable(tableName2);
 	vector<vector<int>> paired;
-	vector<int>	unpaired1 = base[tablePos];
 	vector<int> unpaired2 = acceptedEntries;
 
 	//Pairing
-	for (int i = 0; i < unpaired1.size(); i++){
+	for (int i = 0; i < base.size(); i++){
 		bool matched = false;
 		for (int j = 0; j < unpaired2.size(); j++){
-			if(table1.entries[unpaired1[i]][pos1] == table2.entries[unpaired2[j]][pos2]){
-				matched = true;
-				vector<int> tmp = base[i];	//get row of existing pairs and add unpaired2 pos as new column
-				tmp.push_back(unpaired2[j]);
-				paired.push_back(tmp);
+			if(-1 != base[i][tablePos] && -1 != unpaired2[j]){
+				if(table1.entries[base[i][tablePos]]->at(pos1) == table2.entries[unpaired2[j]]->at(pos2)){
+					matched = true;
+					vector<int> tmp = base[i];	//get row of existing pairs and add unpaired2 pos as new column
+					tmp.push_back(unpaired2[j]);
+					paired.push_back(tmp);
+				}
 			}
 		}
 		if(false == matched){	//No matching value, insert -1 for null
@@ -104,14 +105,18 @@ vector<vector<int>> api::pairEntries(vector<vector<int>> base, string baseTableN
 	}
 	for (int i = 0; i < paired.size(); i++){	//Remove paired elements from unpaired2
 		for (int j = 0; j < unpaired2.size(); j++){
-			if(paired[i][tablePos] == unpaired2[j]){
+			if(paired[i][tablePos + 1] == unpaired2[j]){
 				unpaired2.erase(unpaired2.begin() + j);
 				break;
 			}
 		}
 	}
 	vector<int> nullBase;
-	for(int i = 0; i < base.size(); i++){	//Create a -1 base row to append unpaired2 to
+	int size = 0;
+	if(0 < base.size()){
+		size = base[0].size();
+	}
+	for(int i = 0; i < size; i++){	//Create a -1 base row to append unpaired2 to
 		nullBase.push_back(-1);
 	}
 	for(int i = unpaired2.size() - 1; i >= 0; i--){
@@ -182,13 +187,13 @@ vector<vector<variant<string, double>>> api::apiJoinEntry(vector<tuple<string, v
 		string baseTable = get<0>(get<0>(join[i]));
 		int tablePos;
 		vector<int> accepted;
-		string baseCol = get<0>(get<1>(join[i]));
-		string newTable = get<1>(get<0>(join[i]));
+		string baseCol = get<1>(get<0>(join[i]));
+		string newTable = get<0>(get<1>(join[i]));
 		string newCol = get<1>(get<1>(join[i]));
 
 		bool found = false;
 		bool foundBase = false;
-		string tableName = get<1>(get<0>(join[i]));
+		string tableName = newTable;
 		for(int j = 0; j < tableNames.size(); j++){
 			if(false == foundBase && baseTable == tableNames[j]){
 				foundBase = true;
@@ -209,12 +214,7 @@ vector<vector<variant<string, double>>> api::apiJoinEntry(vector<tuple<string, v
 			}
 		}
 		if(false == found){		//Table has no conditions, get every entry
-			int size = tables.getTable(tableName).entries.size();
-			vector<int> tmp;
-			for(int j = 0; j < size; j++){
-				tmp.push_back(j);
-			}
-			accepted = tmp;
+			accepted = getAcceptedEntries(tables.getTable(tableName), {});
 		}
 		tableNames.push_back(tableName);
 		args.push_back({baseTable, tablePos, accepted, baseCol, newTable, newCol});
@@ -238,9 +238,11 @@ vector<vector<variant<string, double>>> api::apiJoinEntry(vector<tuple<string, v
 		}
 		if(false == found){		//If columns were not given, add all columns of table to output
 			table tmp = tables.getTable(tableNames[i]);
+			vector<string> tmpColNames = {};
 			for(int j = 0; j < tmp.columns.size(); j++){
-				outputCols[i].push_back(get<0>(columns[j]));
+				tmpColNames.push_back(get<0>(tmp.columns[j]));
 			}
+			outputCols.push_back(tmpColNames);
 		}
 	}
 	vector<vector<variant<string, double>>> comboTable = vector<vector<variant<string, double>>>(joined.size());
