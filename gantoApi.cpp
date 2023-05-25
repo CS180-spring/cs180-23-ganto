@@ -572,55 +572,7 @@ vector<vector<variant<string, double>>> api::apiReadEntry(string tableName, vect
 	        }
 	    }
 	}
-	
-	vector<int> accepted;
-    if (!conditions.empty()) {
-        // Check if indexes exist for the specified columns
-        for (const auto& condition : conditions) {
-            string columnName = get<0>(condition);
-            int columnPos = tables.getColumnPosition(tableName, columnName);
-            if (columnPos == -1) {
-                // Invalid column name, return empty result
-                return {};
-            }
-
-            bool indexExists = false;
-            for (const auto& index : t->indexes) {
-                if (get<0>(index) == columnName) {
-                    indexExists = true;
-                    break;
-                }
-            }
-
-            if (!indexExists) {
-                // Index doesn't exist, skip optimization
-                accepted = getAcceptedEntries(*t, conditions);
-                break;
-            } else {
-                // Use the index for optimization
-                variant<string, double> conditionValue = get<2>(condition);
-                int op = get<1>(condition);
-                vector<int> indexPositions;
-                for (const auto& index : t->indexes) {
-                    if (get<0>(index) == columnName) {
-                        indexPositions = get<1>(index);
-                        break;
-                    }
-                }
-
-                for (int pos : indexPositions) {
-                    variant<string, double> entryValue = t->entries[pos]->at(columnPos);
-                    if (compare(entryValue, op, conditionValue)) {
-                        accepted.push_back(pos);
-                    }
-                }
-            }
-        }
-    } else {
-        // No conditions specified, retrieve all entries
-        accepted = getAcceptedEntries(*t, conditions);
-    }
-
+	vector<int> accepted = getAcceptedEntries(*t, conditions);
 	for(int i = 0; i < accepted.size(); i++){
 		int entry = accepted[i];
 		vector<variant<string, double>> entryResult;
