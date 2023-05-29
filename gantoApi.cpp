@@ -50,8 +50,8 @@ class api{
 	vector<vector<variant<string, double>>> apiReadEntry(vector <string> table, vector<vector<string>> displayColumns);
 	vector<vector<variant<string, double>>> apiReadEntry(vector <string> table, vector<vector<string>> displayColumns, vector<vector<tuple<string, int, variant<string, double>>>> conditions);
 
-	//																	table		cols					col		op		compareAgainst										table1	col1			table2	col2
-	vector<vector<variant<string, double>>> apiJoinEntry(vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns, vector<tuple<tuple<string, string>, tuple<string, string>>> join);
+	//		ColumnNames							Entries										table		cols						col		op		compareAgainst										table1	col1			table2	col2
+	tuple<vector<string>, vector<vector<variant<string, double>>>> apiJoinEntry(vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns, vector<tuple<tuple<string, string>, tuple<string, string>>> join);
 
 		//Read Entry (Return String values)
 
@@ -130,8 +130,8 @@ vector<vector<int>> api::pairEntries(vector<vector<int>> base, string baseTableN
 }
 
 
-//																		table		cols					col		op		compareAgainst										table1	  col1			table2	col2
-vector<vector<variant<string, double>>> api::apiJoinEntry(vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns, vector<tuple<tuple<string, string>, tuple<string, string>>> join){
+	//		ColumnNames							Entries										table		cols						col		op		compareAgainst										table1	col1			table2	col2
+tuple<vector<string>, vector<vector<variant<string, double>>>> api::apiJoinEntry(vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns, vector<tuple<tuple<string, string>, tuple<string, string>>> join){
 	vector<string> tableNames = vector<string>();
 	//Setup the first join
 	//			baseTbl	tblPos	accepted	baseCol	newTbl	newCol
@@ -232,10 +232,14 @@ vector<vector<variant<string, double>>> api::apiJoinEntry(vector<tuple<string, v
 		}
 	}
 	vector<vector<variant<string, double>>> comboTable = vector<vector<variant<string, double>>>(joined.size());
+	vector<string> returnCols = {};
 	if(joined.size() > 0){
 		for(int j = 0; j < joined[0].size(); j++){		//Column
 			vector<variant<string, double>> column;
 			vector<string> columnNames = outputCols[j];
+			for(int i = 0; i < columnNames.size(); i++){	//Adds the columns and their respective tableNames to the list of columns to be returned
+				returnCols.push_back(tableNames[j] + '.' + columnNames[i]);
+			}
 			table tmp = tables.getTable(tableNames[j]);
 			vector<int> colPos = {};
 			for(int i = 0; i < columnNames.size(); i++){	//Find colPos for current column
@@ -267,7 +271,7 @@ vector<vector<variant<string, double>>> api::apiJoinEntry(vector<tuple<string, v
 		}
 	}
 
-	return comboTable;
+	return {returnCols, comboTable};
 }
 
 bool api::apiLoadFile(string filename){

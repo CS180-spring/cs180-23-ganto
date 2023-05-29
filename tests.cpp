@@ -649,7 +649,7 @@ void readMultipleEntryTest(){
 
 void joinTest(){
 	t.apiAddTable("JoinTest1", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
-	vector<vector<variant<string, double>>> returned;
+	tuple<vector<string>, vector<vector<variant<string, double>>>> returned;
 	vector<vector<variant<string, double>>> entries1;
 	entries1.push_back({{"entry1", 10.0, "#1"}});
 	entries1.push_back({{"entry2", 20.0, "#"}});
