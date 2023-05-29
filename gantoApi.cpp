@@ -103,23 +103,24 @@ vector<vector<int>> api::pairEntries(vector<vector<int>> base, string baseTableN
 			paired.push_back(tmp);
 		}
 	}
-	for (int i = 0; i < paired.size(); i++){	//Remove paired elements from unpaired2
+	int size = paired.size();
+	for (int i = 0; i < size; i++){	//Remove paired elements from unpaired2
 		for (int j = 0; j < unpaired2.size(); j++){
-			if(paired[i][tablePos + 1] == unpaired2[j]){
+			if(paired[i][size - 1] == unpaired2[j]){	//Bug here, tablePos + 1 should be paired.size() - 1
 				unpaired2.erase(unpaired2.begin() + j);
 				break;
 			}
 		}
 	}
 	vector<int> nullBase;
-	int size = 0;
+	size = 0;
 	if(0 < base.size()){
 		size = base[0].size();
 	}
 	for(int i = 0; i < size; i++){	//Create a -1 base row to append unpaired2 to
 		nullBase.push_back(-1);
 	}
-	for(int i = unpaired2.size() - 1; i >= 0; i--){
+	for(int i = 0; i < unpaired2.size(); i++){
 		vector<int> tmp = nullBase;
 		tmp.push_back(unpaired2[i]);
 		paired.push_back(tmp);

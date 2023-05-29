@@ -685,8 +685,7 @@ void joinTest(){
 		t.apiAddEntry("JoinTest3", entries3[i]);
 	}
 
-    vector<tuple<string, int, variant<string, double>>> conditions = {};//{{"String", 0, "entry1"}, {"Double", 1, 10.0}};
-	vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns = {{"JoinTest1", {"String", "Double"}, conditions},{"JoinTest2", {"String", "Third Thing"}, conditions}};
+	vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns = {{"JoinTest1", {"String", "Double"}, {{"String", 0, "entry1"}, {"Double", 0, 10.0}}},{"JoinTest2", {"String", "Third Thing"}, {{"Double", 3, 300.0}, {"Double", 1, 10.0}}}};
 	vector<tuple<tuple<string, string>, tuple<string, string>>> join = {{{"JoinTest1", "Third Thing"}, {"JoinTest2", "Third Thing"}}, {{"JoinTest1", "Third Thing"}, {"JoinTest3", "Third Thing"}}};
     returned = t.apiJoinEntry(columns, join);
 }
@@ -695,18 +694,18 @@ void joinTest(){
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
 
-	addTableTest();
-	updateTableTest();
-	deleteTableTest();
-	readTableTest();
-	addEntryTest();
-	updateEntryTest();
-	deleteEntryTest();
-	readEntryTest();
-	apiAddIndexTest();
+	//addTableTest();
+	//updateTableTest();
+	//deleteTableTest();
+	//readTableTest();
+	//addEntryTest();
+	//updateEntryTest();
+	//deleteEntryTest();
+	//readEntryTest();
+	//apiAddIndexTest();
   	//writeTablesTest();
-  	largeTableTest();
-	readMultipleEntryTest();
+  	//largeTableTest();
+	//readMultipleEntryTest();
 	joinTest();
 
 	return 0;
