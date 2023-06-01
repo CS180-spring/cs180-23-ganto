@@ -634,58 +634,127 @@ bool api::compare(variant<string, double> left, int op, variant<string, double> 
 
 
 
-vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int, variant<string, double>>> conditions){
-	vector<int> accepted;
-	for(int i = 0; i < workingTable.entries.size(); i++){
-		accepted.push_back(i);
-	}
+vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int, variant<string, double>>> conditions) {
+    vector<int> accepted;
+    const vector<tuple<string, vector<int>>>& indexes = workingTable.indexes;
 
-	if(0 == conditions.size()){		//no conditions means return all entries
-		return accepted;
-	}
+    // Check if an index exists for the column specified in conditions
+    bool useIndex = false;
+    int columnIndex = -1;
+    for (int i = 0; i < indexes.size(); i++) {
+        if (get<0>(indexes[i]) == get<0>(conditions[0])) {
+            useIndex = true;
+            columnIndex = i;
+            break;
+        }
+    }
 
-	string columnName = "";
-	int colPos = 0;
-	for(int i = 0; i < accepted.size(); i++){
-		bool removed = false;
-		int entry = accepted[i];
-		for(int j = 0; j < conditions.size(); j++){
-			if(columnName != get<0>(conditions[j])){
-				columnName = get<0>(conditions[j]);
-				colPos = tables.getColumnPosition(workingTable.name, columnName);	//Could improve performance by making new getColumn[.]s that takes tables
-				if(-1 == colPos)
-					return {};
-			}
-			int operation = get<1>(conditions[j]);
-			variant<string, double> compareWith = get<2>(conditions[j]);
-			int type = get<1>(workingTable.columns[colPos]);
-			switch(type){
-				case 0:
-					if(false == holds_alternative<string>(compareWith))	//Incompatable column type and comparison value
-						return {};
-					if(false == compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))){
-						accepted.erase(accepted.begin() + i);
-						i--;
-						removed = true;
-					}
-					break;
-				case 1:
-					if(false == holds_alternative<double>(compareWith))	//Incompatable column type and comparison value
-						return {};
-					if(false == compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))){
-						accepted.erase(accepted.begin() + i);
-						i--;
-						removed = true;
-					}
-					break;
-				default:
-					return {};
-			}
-			if(true == removed)
-				break;
-		}
-	}
-	return accepted;
+    if (useIndex) {
+        const vector<int>& indexPositions = get<1>(indexes[columnIndex]);
+        for (int i = 0; i < indexPositions.size(); i++) {
+            int entry = indexPositions[i];
+            bool satisfiesConditions = true;
+
+            for (int j = 0; j < conditions.size(); j++) {
+                const string& columnName = get<0>(conditions[j]);
+                int operation = get<1>(conditions[j]);
+                const variant<string, double>& compareWith = get<2>(conditions[j]);
+                int colPos = tables.getColumnPosition(workingTable.name, columnName);
+
+                if (colPos == -1) {
+                    return {};  // column not found
+                }
+
+                int type = get<1>(workingTable.columns[colPos]);
+                switch (type) {
+                    case 0:
+                        if (!holds_alternative<string>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))) {
+                            satisfiesConditions = false;
+                        }
+                        break;
+                    case 1:
+                        if (!holds_alternative<double>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))) {
+                            satisfiesConditions = false;
+                        }
+                        break;
+                    default:
+                        return {};
+                }
+
+                if (!satisfiesConditions) {
+                    break;
+                }
+            }
+
+            if (satisfiesConditions) {
+                accepted.push_back(entry);
+            }
+        }
+    } else {
+        // No index available, fallback to linear search
+        for (int i = 0; i < workingTable.entries.size(); i++) {
+            accepted.push_back(i);
+        }
+
+        if (conditions.empty()) {
+            return accepted;
+        }
+
+        // Perform linear search and filter based on conditions
+        for (int i = 0; i < accepted.size(); i++) {
+            bool removed = false;
+            int entry = accepted[i];
+
+            for (int j = 0; j < conditions.size(); j++) {
+                const string& columnName = get<0>(conditions[j]);
+                int operation = get<1>(conditions[j]);
+                const variant<string, double>& compareWith = get<2>(conditions[j]);
+                int colPos = tables.getColumnPosition(workingTable.name, columnName);
+
+                if (colPos == -1) {
+                    return {};  // column not found
+                }
+
+                int type = get<1>(workingTable.columns[colPos]);
+                switch (type) {
+                    case 0:
+                        if (!holds_alternative<string>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))) {
+                            accepted.erase(accepted.begin() + i);
+                            i--;
+                            removed = true;
+                        }
+                        break;
+                    case 1:
+                        if (!holds_alternative<double>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))) {
+                            accepted.erase(accepted.begin() + i);
+                            i--;
+                            removed = true;
+                        }
+                        break;
+                    default:
+                        return {};
+                }
+
+                if (removed) {
+                    break;
+                }
+            }
+        }
+    }
+
+    return accepted;
 }
 
 bool api::apiUpdateEntry(string tableName, string column, double newData) {

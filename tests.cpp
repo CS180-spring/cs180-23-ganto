@@ -474,7 +474,7 @@ void largeTableTest(){
 	vector<vector<variant<string, double>>> returned;
 
 	returned = t.apiReadEntry("LargeTable", {"Number"}, {{"Number", 1, 50.0}});
-	cout << returned.size();
+	cout << returned.size() << endl;
 }
 
 void readMultipleEntryTest(){
@@ -704,6 +704,9 @@ int main(){
 	//readEntryTest();
 	//apiAddIndexTest();
   	//writeTablesTest();
+	largeTableTest();
+	t.apiAddIndex("LargeTable", "Number");
+
   	//largeTableTest();
 	//readMultipleEntryTest();
 	joinTest();
