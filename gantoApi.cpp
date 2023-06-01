@@ -422,6 +422,18 @@ vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int
 
 	string columnName = "";
 	int colPos = 0;
+	bool useIndex = false;
+
+	// Check if an index exists for the column in conditions
+	if (!workingTable.indexes.empty()) {
+        for (const auto& index : workingTable.indexes) {
+            if (get<0>(index) == get<0>(conditions[0])) {
+                useIndex = true;
+                break;
+            }
+        }
+    }
+
 	for(int i = 0; i < accepted.size(); i++){
 		bool removed = false;
 		int entry = accepted[i];
@@ -435,33 +447,53 @@ vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int
 			int operation = get<1>(conditions[j]);
 			variant<string, double> compareWith = get<2>(conditions[j]);
 			int type = get<1>(workingTable.columns[colPos]);
-			switch(type){
-				case 0:
-					if(false == holds_alternative<string>(compareWith))	//Incompatable column type and comparison value
-						return {};
-					if(false == compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))){
-						accepted.erase(accepted.begin() + i);
-						i--;
-						removed = true;
-					}
-					break;
-				case 1:
-					if(false == holds_alternative<double>(compareWith))	//Incompatable column type and comparison value
-						return {};
-					if(false == compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))){
-						accepted.erase(accepted.begin() + i);
-						i--;
-						removed = true;
-					}
-					break;
-				default:
-					return {};
-			}
-			if(true == removed)
-				break;
-		}
-	}
-	return accepted;
+			
+			if (useIndex) {
+               			// Binary search using the index positions
+                		const auto& index = workingTable.indexes[0];
+                		const vector<int>& indexPositions = get<1>(index);
+                		auto it = lower_bound(indexPositions.begin(), indexPositions.end(), entry);
+                		if (it == indexPositions.end() || *it != entry) {
+                    			accepted.erase(accepted.begin() + i);
+                    			i--;
+                    			removed = true;
+                    			break;
+                		}
+            		} else {
+                // Perform regular linear search
+                switch (type) {
+                    case 0:
+                        if (!holds_alternative<string>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))) {
+                            accepted.erase(accepted.begin() + i);
+                            i--;
+                            removed = true;
+                        }
+                        break;
+                    case 1:
+                        if (!holds_alternative<double>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))) {
+                            accepted.erase(accepted.begin() + i);
+                            i--;
+                            removed = true;
+                        }
+                        break;
+                    default:
+                        return {};
+                }
+            }
+
+            if (removed) {
+                break;
+            }
+        }
+    }
+
+    return accepted;
 }
 
 bool api::apiUpdateEntry(string tableName, string column, double newData) {
