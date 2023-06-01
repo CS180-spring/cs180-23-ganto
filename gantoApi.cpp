@@ -1,14 +1,22 @@
 #include "tableList.cpp"
+#include <iostream>
+using namespace std;
+
 class api{
 	private:
+	double nullDouble = 10011100101010.101001100010011;		//"NULL" in binary is 01001110010101010100110001001100
 	tableList tables;
 	vector<int> getAcceptedEntries(table workingTable, vector<tuple<string, int, variant<string, double>>> conditions);
 	bool compare(variant<string, double> left, int op, variant<string, double> right);	
 	bool keyUsed(table* workingTable, int columnPos, variant<string, double> data);
 	bool isRequired(table* workingTable, string column);
+	vector<vector<int>> pairEntries(vector<vector<int>> base, string baseTableName, int tablePos, vector<int> acceptedEntries, string baseColName, string newTableName, string newColName);
+
 
 	public:
 	api(){ tables = tableList(); }
+
+	vector<vector<string>> convertToString(vector<vector<variant<string, double>>> old);
 
 	//Table Functions
 		//Add Table
@@ -40,9 +48,272 @@ class api{
 		//Read Entry
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns);
 	vector<vector<variant<string, double>>> apiReadEntry(string table, vector<string> displayColumns, vector<tuple<string, int, variant<string, double>>> conditions);
-                //Add Index
+               
+	vector<vector<variant<string, double>>> apiReadEntry(vector <string> table, vector<vector<string>> displayColumns);
+	vector<vector<variant<string, double>>> apiReadEntry(vector <string> table, vector<vector<string>> displayColumns, vector<vector<tuple<string, int, variant<string, double>>>> conditions);
+
+	//		ColumnNames							Entries										table		cols						col		op		compareAgainst										table1	col1			table2	col2
+	tuple<vector<string>, vector<vector<variant<string, double>>>> apiJoinEntry(vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns, vector<tuple<tuple<string, string>, tuple<string, string>>> join);
+
+		//Read Entry (Return String values)
+
+    //Add Index
 	bool apiAddIndex(string tableName, string columnName);
+  
+	bool apiSaveToFile();
+	bool apiSaveToFile(string filename);
+	bool apiLoadFile(string filename);
 };
+
+vector<vector<string>> api::convertToString(vector<vector<variant<string, double>>> old){
+	vector<vector<string>> converted;
+	for(int i = 0; i < old.size(); i++){
+		vector<string> row;
+		for(int j = 0; j < old[0].size(); j++){
+			if(holds_alternative<string>(old[i][j])){
+				string tmp = get<string>(old[i][j]);
+				if("" == tmp)
+					tmp = "NULL";
+				row.push_back(tmp);
+			}
+			else if(holds_alternative<double>(old[i][j])){
+				double tmp = get<double>(old[i][j]);
+				if(tmp == nullDouble){
+					row.push_back("NULL");
+				}
+				else{
+					row.push_back(to_string(tmp));
+				}
+			}
+		}
+		converted.push_back(row);
+	}
+	return converted;
+}
+
+
+vector<vector<int>> api::pairEntries(vector<vector<int>> base, string baseTableName, int tablePos, vector<int> acceptedEntries, string baseColName, string newTableName, string newColName){
+	//Get elements from join for readability
+	string tableName1 = baseTableName;
+	string tableName2 = newTableName;
+	string col1 = baseColName;
+	string col2 = newColName;
+	int type1 = tables.getColumnType(tableName1, col1);
+	int type2 = tables.getColumnType(tableName2, col2);
+
+	if(-1 == type1 || -1 == type2 || type1 != type2){	//Columns not found or incompatable types
+		return {};
+	}
+
+	//More readability declarations
+	int pos1 = tables.getColumnPosition(tableName1, col1);
+	int pos2 = tables.getColumnPosition(tableName2, col2);
+	table table1 = tables.getTable(tableName1);
+	table table2 = tables.getTable(tableName2);
+	vector<vector<int>> paired;
+	vector<int> unpaired2 = acceptedEntries;
+
+	//Pairing
+	for (int i = 0; i < base.size(); i++){
+		bool matched = false;
+		for (int j = 0; j < unpaired2.size(); j++){
+			if(-1 != base[i][tablePos] && -1 != unpaired2[j]){
+				if(table1.entries[base[i][tablePos]]->at(pos1) == table2.entries[unpaired2[j]]->at(pos2)){
+					matched = true;
+					vector<int> tmp = base[i];	//get row of existing pairs and add unpaired2 pos as new column
+					tmp.push_back(unpaired2[j]);
+					paired.push_back(tmp);
+				}
+			}
+		}
+		if(false == matched){	//No matching value, insert -1 for null
+			vector<int> tmp = base[i];
+			tmp.push_back(-1);
+			paired.push_back(tmp);
+		}
+	}
+	int size = paired.size();
+	for (int i = 0; i < size; i++){	//Remove paired elements from unpaired2
+		for (int j = 0; j < unpaired2.size(); j++){
+			if(paired[i][size - 1] == unpaired2[j]){	//Bug here, tablePos + 1 should be paired.size() - 1
+				unpaired2.erase(unpaired2.begin() + j);
+				break;
+			}
+		}
+	}
+	vector<int> nullBase;
+	size = 0;
+	if(0 < base.size()){
+		size = base[0].size();
+	}
+	for(int i = 0; i < size; i++){	//Create a -1 base row to append unpaired2 to
+		nullBase.push_back(-1);
+	}
+	for(int i = 0; i < unpaired2.size(); i++){
+		vector<int> tmp = nullBase;
+		tmp.push_back(unpaired2[i]);
+		paired.push_back(tmp);
+	}
+
+	return paired;
+}
+
+
+	//		ColumnNames							Entries										table		cols						col		op		compareAgainst										table1	col1			table2	col2
+tuple<vector<string>, vector<vector<variant<string, double>>>> api::apiJoinEntry(vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns, vector<tuple<tuple<string, string>, tuple<string, string>>> join){
+	vector<string> tableNames = vector<string>();
+	//Setup the first join
+	//			baseTbl	tblPos	accepted	baseCol	newTbl	newCol
+	vector<tuple<string, int, vector<int>, string, string, string>> args;
+	vector<vector<int>> joined = {};
+	if(join.size() > 0){
+		string baseTable = get<0>(get<0>(join[0]));
+		tableNames.push_back(baseTable);
+		int tablePos = 0;
+		vector<tuple<string, int, variant<string, double>>> conditions = {};
+		string baseCol = get<1>(get<0>(join[0]));
+		for(int i = 0; i < columns.size(); i++){	//Find any conditions for table1
+			if(get<0>(columns[i]) == baseTable){
+				conditions = get<2>(columns[i]);
+				break;
+			}
+		}
+		vector<int> tmp = getAcceptedEntries(tables.getTable(baseTable), conditions);
+		for(int i = 0; i < tmp.size(); i++){
+			joined.push_back({tmp[i]});
+		}
+
+		conditions = {};
+		string newTable = get<0>(get<1>(join[0]));	
+		tableNames.push_back(newTable);
+		for(int i = 0; i < columns.size(); i++){	//Find any conditions for table2
+			if(get<0>(columns[i]) == newTable){
+				conditions = get<2>(columns[i]);
+				break;
+			}
+		}
+		vector<int> accepted = getAcceptedEntries(tables.getTable(newTable), conditions);
+		string newCol = get<1>(get<1>(join[0]));
+		args = {{baseTable, tablePos, accepted, baseCol, newTable, newCol}};
+	}
+
+	//Get accepted entries for all columns in the order found in join
+	for(int i = 1; i < join.size(); i++){
+		string baseTable = get<0>(get<0>(join[i]));
+		int tablePos;
+		vector<int> accepted;
+		string baseCol = get<1>(get<0>(join[i]));
+		string newTable = get<0>(get<1>(join[i]));
+		string newCol = get<1>(get<1>(join[i]));
+
+		bool found = false;
+		bool foundBase = false;
+		string tableName = newTable;
+		for(int j = 0; j < tableNames.size(); j++){
+			if(false == foundBase && baseTable == tableNames[j]){
+				foundBase = true;
+				tablePos = j;	//Tables are merged in the same order as tableNames are added to the list
+			}
+			if(tableName == tableNames[j]){
+				return {};	//Repeated tables is not allowed, could fix but would run slower than just enforcing unique tables
+			}
+		}
+		if(false == foundBase){
+			return {};		//Base table must be a previously merged table
+		}
+		for(int j = 0; j < columns.size(); j++){
+			if(tableName == get<0>(columns[j])){	//Table has conditions
+				found = true;
+				accepted = getAcceptedEntries(tables.getTable(tableName), get<2>(columns[j]));
+				break;
+			}
+		}
+		if(false == found){		//Table has no conditions, get every entry
+			accepted = getAcceptedEntries(tables.getTable(tableName), {});
+		}
+		tableNames.push_back(tableName);
+		args.push_back({baseTable, tablePos, accepted, baseCol, newTable, newCol});
+	}
+
+	//Join accepted entries into new table format
+	for(int i = 0; i < join.size(); i++){
+		joined = pairEntries(joined, get<0>(args[i]), get<1>(args[i]), get<2>(args[i]), get<3>(args[i]), get<4>(args[i]), get<5>(args[i]));
+	}
+
+	//get columns to output and the table they go to
+	vector<vector<string>> outputCols;
+	for(int i = 0; i < tableNames.size(); i++){
+		bool found = false;
+		for(int j = 0; j < columns.size(); j++){
+			if(get<0>(columns[j]) == tableNames[i]){	//If columns were given, add chosen columns to output
+				outputCols.push_back(get<1>(columns[j]));
+				found = true;
+				break;
+			}
+		}
+		if(false == found){		//If columns were not given, add all columns of table to output
+			table tmp = tables.getTable(tableNames[i]);
+			vector<string> tmpColNames = {};
+			for(int j = 0; j < tmp.columns.size(); j++){
+				tmpColNames.push_back(get<0>(tmp.columns[j]));
+			}
+			outputCols.push_back(tmpColNames);
+		}
+	}
+	vector<vector<variant<string, double>>> comboTable = vector<vector<variant<string, double>>>(joined.size());
+	vector<string> returnCols = {};
+	if(joined.size() > 0){
+		for(int j = 0; j < joined[0].size(); j++){		//Column
+			vector<variant<string, double>> column;
+			vector<string> columnNames = outputCols[j];
+			for(int i = 0; i < columnNames.size(); i++){	//Adds the columns and their respective tableNames to the list of columns to be returned
+				returnCols.push_back(tableNames[j] + '.' + columnNames[i]);
+			}
+			table tmp = tables.getTable(tableNames[j]);
+			vector<int> colPos = {};
+			for(int i = 0; i < columnNames.size(); i++){	//Find colPos for current column
+				for(int k = 0; k < tmp.columns.size(); k++){
+					if(get<0>(tmp.columns[k]) == columnNames[i]){
+						colPos.push_back(k);
+						break;
+					}
+				}
+			}
+			for(int i = 0; i < joined.size(); i++){		//Row
+				if(-1 == joined[i][j]){	//Table is null at position
+					for(int k = 0; k < outputCols[j].size(); k++){	//Loop through the output columns
+						int type = get<1>(tmp.columns[colPos[k]]);
+						if(0 == type){
+							comboTable[i].push_back("NULL");
+						}
+						else if(1 == type){
+							comboTable[i].push_back(nullDouble);
+						}
+					}
+				}
+				else{
+					for(int k = 0; k < outputCols[j].size(); k++){	//Loop through the output columns
+						comboTable[i].push_back(tmp.entries[joined[i][j]]->at(colPos[k]));
+					}
+				}
+			}
+		}
+	}
+
+	return {returnCols, comboTable};
+}
+
+bool api::apiLoadFile(string filename){
+		return tables.loadTables(filename);
+}
+
+bool api::apiSaveToFile(){
+		return apiSaveToFile("tmpName.json");
+}
+
+bool api::apiSaveToFile(string filename){
+		return tables.writeTables(filename);
+}
 
 bool api::isRequired(table* workingTable, string column){
 	for(int i = 0; i < workingTable->required.size(); i++){
@@ -94,6 +365,14 @@ bool api::apiRemoveEntry(string tableName, string column, vector<tuple<string, i
 }
 
 bool api::keyUsed(table* workingTable, int columnPos, variant<string, double> data){
+	bool keyColumn = false;
+	for(int i = 0; i < workingTable->keys.size(); i++){
+		if(get<0>(workingTable->columns[columnPos]) == get<1>(workingTable->keys[i]))
+			keyColumn = true;
+	}
+	if(false == keyColumn)	//The chosen column is not a key column
+		return false;
+
 	int type = get<1>(workingTable->columns[columnPos]);
 	string stringData;
 	double doubleData;
@@ -107,11 +386,11 @@ bool api::keyUsed(table* workingTable, int columnPos, variant<string, double> da
 	for(int i = 0; i < workingTable->entries.size(); i++){
 		switch(type){
 			case 0:
-				if(stringData == get<string>(workingTable->entries[i]->at(columnPos)))
+				if(stringData == get<string>(workingTable->entries[i]->at(columnPos)))	//String entry already exists in column
 					return true;
 				break;
 			case 1:
-				if(doubleData == get<double>(workingTable->entries[i]->at(columnPos)))
+				if(doubleData == get<double>(workingTable->entries[i]->at(columnPos)))	//String entry already exists in column
 					return true;
 				break;
 		}
@@ -128,19 +407,19 @@ bool api::apiAddEntry(string tableName, vector<variant<string, double>> columns)
 	bool valid = true;
 	for(int i = 0; i < columns.size(); i++){
 		variant<string, double> colVal;
-		if(holds_alternative<string>(columns[i])){
-			if(0 != get<1>(t->columns[i]))
+		if(holds_alternative<string>(columns[i])){	//String columns
+			if(0 != get<1>(t->columns[i]))	//Incompatable column type and column value
 				return false;
 			if(get<string>(columns[i]) == "" && true == isRequired(t, get<0>(t->columns[i])))	//Attempting to put "" into required column
 				return false;
 			colVal = get<string>(columns[i]);
 		}
-		else if(holds_alternative<double>(columns[i])){
-			if(1 != get<1>(t->columns[i]))
+		else if(holds_alternative<double>(columns[i])){	//Double columns
+			if(1 != get<1>(t->columns[i]))	//Incompatable column type and column value
 				return false;
 			colVal = get<double>(columns[i]);
 		}
-		if(false == keyUsed(t, i, colVal)){
+		if(false == keyUsed(t, i, colVal)){	//Duplicate values are not allowed in key columns
 			entry->push_back(colVal);
 		}
 		else{
@@ -384,58 +663,127 @@ bool api::compare(variant<string, double> left, int op, variant<string, double> 
 
 
 
-vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int, variant<string, double>>> conditions){
-	vector<int> accepted;
-	for(int i = 0; i < workingTable.entries.size(); i++){
-		accepted.push_back(i);
-	}
+vector<int> api::getAcceptedEntries(table workingTable, vector<tuple<string, int, variant<string, double>>> conditions) {
+    vector<int> accepted;
+    const vector<tuple<string, vector<int>>>& indexes = workingTable.indexes;
 
-	if(0 == conditions.size()){		//no conditions means apply change to all entries
-		return accepted;
-	}
+    // Check if an index exists for the column specified in conditions
+    bool useIndex = false;
+    int columnIndex = -1;
+    for (int i = 0; i < indexes.size(); i++) {
+        if (get<0>(indexes[i]) == get<0>(conditions[0])) {
+            useIndex = true;
+            columnIndex = i;
+            break;
+        }
+    }
 
-	string columnName = "";
-	int colPos = 0;
-	for(int i = 0; i < accepted.size(); i++){
-		bool removed = false;
-		int entry = accepted[i];
-		for(int j = 0; j < conditions.size(); j++){
-			if(columnName != get<0>(conditions[j])){
-				columnName = get<0>(conditions[j]);
-				colPos = tables.getColumnPosition(workingTable.name, columnName);	//Could improve performance by making new getColumn[.]s that takes tables
-				if(-1 == colPos)
-					return {};
-			}
-			int operation = get<1>(conditions[j]);
-			variant<string, double> compareWith = get<2>(conditions[j]);
-			int type = get<1>(workingTable.columns[colPos]);
-			switch(type){
-				case 0:
-					if(false == holds_alternative<string>(compareWith))
-						return {};
-					if(false == compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))){
-						accepted.erase(accepted.begin() + i);
-						i--;
-						removed = true;
-					}
-					break;
-				case 1:
-					if(false == holds_alternative<double>(compareWith))
-						return {};
-					if(false == compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))){
-						accepted.erase(accepted.begin() + i);
-						i--;
-						removed = true;
-					}
-					break;
-				default:
-					return {};
-			}
-			if(true == removed)
-				break;
-		}
-	}
-	return accepted;
+    if (useIndex) {
+        const vector<int>& indexPositions = get<1>(indexes[columnIndex]);
+        for (int i = 0; i < indexPositions.size(); i++) {
+            int entry = indexPositions[i];
+            bool satisfiesConditions = true;
+
+            for (int j = 0; j < conditions.size(); j++) {
+                const string& columnName = get<0>(conditions[j]);
+                int operation = get<1>(conditions[j]);
+                const variant<string, double>& compareWith = get<2>(conditions[j]);
+                int colPos = tables.getColumnPosition(workingTable.name, columnName);
+
+                if (colPos == -1) {
+                    return {};  // column not found
+                }
+
+                int type = get<1>(workingTable.columns[colPos]);
+                switch (type) {
+                    case 0:
+                        if (!holds_alternative<string>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))) {
+                            satisfiesConditions = false;
+                        }
+                        break;
+                    case 1:
+                        if (!holds_alternative<double>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))) {
+                            satisfiesConditions = false;
+                        }
+                        break;
+                    default:
+                        return {};
+                }
+
+                if (!satisfiesConditions) {
+                    break;
+                }
+            }
+
+            if (satisfiesConditions) {
+                accepted.push_back(entry);
+            }
+        }
+    } else {
+        // No index available, fallback to linear search
+        for (int i = 0; i < workingTable.entries.size(); i++) {
+            accepted.push_back(i);
+        }
+
+        if (conditions.empty()) {
+            return accepted;
+        }
+
+        // Perform linear search and filter based on conditions
+        for (int i = 0; i < accepted.size(); i++) {
+            bool removed = false;
+            int entry = accepted[i];
+
+            for (int j = 0; j < conditions.size(); j++) {
+                const string& columnName = get<0>(conditions[j]);
+                int operation = get<1>(conditions[j]);
+                const variant<string, double>& compareWith = get<2>(conditions[j]);
+                int colPos = tables.getColumnPosition(workingTable.name, columnName);
+
+                if (colPos == -1) {
+                    return {};  // column not found
+                }
+
+                int type = get<1>(workingTable.columns[colPos]);
+                switch (type) {
+                    case 0:
+                        if (!holds_alternative<string>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<string>(workingTable.entries[entry]->at(colPos)), operation, get<string>(compareWith))) {
+                            accepted.erase(accepted.begin() + i);
+                            i--;
+                            removed = true;
+                        }
+                        break;
+                    case 1:
+                        if (!holds_alternative<double>(compareWith)) {
+                            return {};  // incompatible column type and comparison value
+                        }
+                        if (!compare(get<double>(workingTable.entries[entry]->at(colPos)), operation, get<double>(compareWith))) {
+                            accepted.erase(accepted.begin() + i);
+                            i--;
+                            removed = true;
+                        }
+                        break;
+                    default:
+                        return {};
+                }
+
+                if (removed) {
+                    break;
+                }
+            }
+        }
+    }
+
+    return accepted;
 }
 
 bool api::apiUpdateEntry(string tableName, string column, double newData) {
@@ -556,6 +904,32 @@ vector<vector<variant<string, double>>> api::apiReadEntry(string tableName, vect
 		result.push_back(entryResult);
 	}
     return result;
+}
+
+vector<vector<variant<string, double>>> api::apiReadEntry(vector <string> table, vector<vector<string>> displayColumns){
+	return apiReadEntry(table, displayColumns, {});
+}
+
+vector<vector<variant<string, double>>> api::apiReadEntry(vector <string> table, vector<vector<string>> displayColumns, vector<vector<tuple<string, int, variant<string, double>>>> conditions){
+	if(table.size() != displayColumns.size()){
+		return {};
+	}
+	bool ans = false;
+	if(table.size() <= conditions.size()){
+		ans = true;
+	}
+	vector<vector<variant<string, double>>> returnEntries, temp;
+	for(int i = 0; i < table.size(); ++i){
+		vector<tuple<string, int, variant<string, double>>> condTemp = {};
+		if(ans == true){
+			condTemp = conditions[i];	
+		}
+		temp = apiReadEntry(table[i], displayColumns[i], condTemp);
+		for(int j = 0; j < temp.size(); ++j){
+			returnEntries.push_back(temp[j]);
+		}
+	}
+	return returnEntries;
 }
 
 bool api::apiAddIndex(string tableName, string columnName){
