@@ -486,5 +486,8 @@ int main(){
 	//apiAddIndexTest();
 	//writeTablesTest();
 	largeTableTest();
+	t.apiAddIndex("LargeTable", "Number");
+	cout << endl;
+	largeTableTest();
 	return 0;
 }
