@@ -647,22 +647,66 @@ void readMultipleEntryTest(){
 
 }
 
+void joinTest(){
+	t.apiAddTable("JoinTest1", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
+	tuple<vector<string>, vector<vector<variant<string, double>>>> returned;
+	vector<vector<variant<string, double>>> entries1;
+	entries1.push_back({{"entry1", 10.0, "#1"}});
+	entries1.push_back({{"entry2", 20.0, "#"}});
+	entries1.push_back({{"entry3", 10.3, "#3"}});
+	entries1.push_back({{"entry4", 14.0, "#4"}});
+	entries1.push_back({{"entry5", 55.0, "#5"}});
+	entries1.push_back({{"entry6", 66.6, "#6"}});
+	for(int i = 0; i < entries1.size(); i++){
+		t.apiAddEntry("JoinTest1", entries1[i]);
+	}
+
+	t.apiAddTable("JoinTest2", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
+	vector<vector<variant<string, double>>> entries2;
+	entries2.push_back({{"entry7", 200.0, "#1"}});
+	entries2.push_back({{"entry8", 253.8, "#2"}});
+	entries2.push_back({{"entry9", 473.09, "#3"}});
+	entries2.push_back({{"entry10", 300.02, "#4"}});
+	entries2.push_back({{"entry11", 6.7, "#9"}});
+	entries2.push_back({{"entry12", 78.2, "#6"}});
+	for(int i = 0; i < entries2.size(); i++){
+		t.apiAddEntry("JoinTest2", entries2[i]);
+	}
+
+	t.apiAddTable("JoinTest3", {{"String", 0}, {"Double", 1}, {"Third Thing", 0}}, {1});
+	vector<vector<variant<string, double>>> entries3;
+	entries3.push_back({{"entry13", 200.0, "#1"}});
+	entries3.push_back({{"entry14", 253.8, "#2"}});
+	entries3.push_back({{"entry15", 473.09, "#3"}});
+	entries3.push_back({{"entry16", 300.02, "#4"}});
+	entries3.push_back({{"entry17", 6.7, "#5"}});
+	entries3.push_back({{"entry18", 78.2, "#6"}});
+	for(int i = 0; i < entries3.size(); i++){
+		t.apiAddEntry("JoinTest3", entries3[i]);
+	}
+
+	vector<tuple<string, vector<string>, vector<tuple<string, int, variant<string, double>>>>> columns = {{"JoinTest1", {"String", "Double"}, {{"String", 0, "entry1"}, {"Double", 0, 10.0}}},{"JoinTest2", {"String", "Third Thing"}, {{"Double", 3, 300.0}, {"Double", 1, 10.0}}}};
+	vector<tuple<tuple<string, string>, tuple<string, string>>> join = {{{"JoinTest1", "Third Thing"}, {"JoinTest2", "Third Thing"}}, {{"JoinTest1", "Third Thing"}, {"JoinTest3", "Third Thing"}}};
+    returned = t.apiJoinEntry(columns, join);
+}
+
 
 //Comment out here if a test you aren't working on is throwing errors
 int main(){
 
-	addTableTest();
-	updateTableTest();
-	deleteTableTest();
-	readTableTest();
-	addEntryTest();
-	updateEntryTest();
-	deleteEntryTest();
-	readEntryTest();
-	apiAddIndexTest();
-  writeTablesTest();
-  largeTableTest();
-	readMultipleEntryTest();
+	//addTableTest();
+	//updateTableTest();
+	//deleteTableTest();
+	//readTableTest();
+	//addEntryTest();
+	//updateEntryTest();
+	//deleteEntryTest();
+	//readEntryTest();
+	//apiAddIndexTest();
+  	//writeTablesTest();
+  	//largeTableTest();
+	//readMultipleEntryTest();
+	joinTest();
 
 	return 0;
 }
