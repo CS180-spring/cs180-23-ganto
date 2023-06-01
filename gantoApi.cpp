@@ -16,6 +16,8 @@ class api{
 	public:
 	api(){ tables = tableList(); }
 
+	vector<vector<string>> convertToString(vector<vector<variant<string, double>>> old);
+
 	//Table Functions
 		//Add Table
 	bool apiAddTable(string tableName, vector<tuple<string, int>> columns, vector<int>keyPos);
@@ -62,6 +64,33 @@ class api{
 	bool apiSaveToFile(string filename);
 	bool apiLoadFile(string filename);
 };
+
+vector<vector<string>> api::convertToString(vector<vector<variant<string, double>>> old){
+	vector<vector<string>> converted;
+	for(int i = 0; i < old.size(); i++){
+		vector<string> row;
+		for(int j = 0; j < old[0].size(); j++){
+			if(holds_alternative<string>(old[i][j])){
+				string tmp = get<string>(old[i][j]);
+				if("" == tmp)
+					tmp = "NULL";
+				row.push_back(tmp);
+			}
+			else if(holds_alternative<double>(old[i][j])){
+				double tmp = get<double>(old[i][j]);
+				if(tmp == nullDouble){
+					row.push_back("NULL");
+				}
+				else{
+					row.push_back(to_string(tmp));
+				}
+			}
+		}
+		converted.push_back(row);
+	}
+	return converted;
+}
+
 
 vector<vector<int>> api::pairEntries(vector<vector<int>> base, string baseTableName, int tablePos, vector<int> acceptedEntries, string baseColName, string newTableName, string newColName){
 	//Get elements from join for readability
