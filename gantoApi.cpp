@@ -63,6 +63,9 @@ class api{
 	bool apiSaveToFile();
 	bool apiSaveToFile(string filename);
 	bool apiLoadFile(string filename);
+
+	vector<string> api::getTableNames();
+	vector<string> api::getColumnNames(string tableName);
 };
 
 vector<vector<string>> api::convertToString(vector<vector<variant<string, double>>> old){
@@ -976,4 +979,22 @@ bool api::apiAddIndex(string tableName, string columnName){
     return true;
 }
 
+vector<string> api::getTableNames() {
+	vector<table*> ZEtables = tables.getAllTables();
+	//table t = tables.getTable();
+	vector<string> tablenames;
+	for (int i = 0; i < ZEtables.size(); i++) {
+		tablenames.push_back(ZEtables[i]->name);
+	}
+	return tablenames;
+}
 
+//returns {columnName, columnType, ForeignKeyTableName or "", key, columnRequired}
+vector<string> api::getColumnNames(string tableName) {
+	table t = tables.getTable(tableName);
+	vector<string> colnames;
+	for (int i = 0; i < t.columns.size(); i++) {
+		colnames.push_back(get<0>(t.columns[i]));
+	}
+	return colnames;
+}
